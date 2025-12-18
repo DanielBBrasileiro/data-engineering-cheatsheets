@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Oracle SQL Cheatsheet 80/20</title>
+    <!-- Fontes Otimizadas para Leitura e Código -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0056b3; /* Azul Profissional */
+            --code-bg: #f4f4f4;
+            --text-color: #1a1a1a;
+            --comment-color: #666;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 8.5pt; /* Levemente reduzido para caber mais detalhes */
+            line-height: 1.25;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0.5cm;
+            background-color: #fff;
+        }
+
+        /* Layout em Colunas */
+        .container {
+            column-count: 2;
+            column-gap: 0.6cm;
+            width: 100%;
+        }
+
+        /* Cabeçalho */
+        header {
+            border-bottom: 2px solid var(--text-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            column-span: all;
+        }
+
+        h1 {
+            font-size: 16pt;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+
+        .meta {
+            font-size: 8pt;
+            color: var(--comment-color);
+            margin-top: 4px;
+        }
+
+        /* Seções */
+        section {
+            break-inside: avoid;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        h2 {
+            font-size: 9.5pt;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            margin: 0 0 5px 0;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 6px;
+        }
+
+        /* Listas */
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            margin-bottom: 3px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between; /* Melhor alinhamento */
+        }
+
+        .cmd-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8pt;
+            background-color: var(--code-bg);
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-weight: 600;
+            color: #000;
+            display: inline-block;
+            white-space: nowrap; /* Evita quebra de código */
+        }
+
+        .desc {
+            font-size: 8pt;
+            color: #333;
+            text-align: right;
+            padding-left: 5px;
+        }
+        
+        .desc.full {
+            text-align: left;
+            padding-left: 0;
+            display: block;
+            margin-top: 1px;
+            color: var(--comment-color);
+        }
+
+        .note {
+            font-size: 7.5pt;
+            color: var(--comment-color);
+            font-style: italic;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .arrow {
+            color: var(--comment-color);
+            font-size: 8pt;
+            margin: 0 2px;
+        }
+
+        /* Exemplos nos detalhes */
+        .ex {
+            color: #0056b3;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.5pt;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Oracle SQL Cheatsheet</h1>
+        <div class="meta">
+            v2.2 • Detalhado • Princípio 80/20
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. ESTRUTURA BÁSICA -->
+        <section>
+            <h2>1. Estrutura de Consulta (SELECT)</h2>
+            <div class="cmd-row">
+                <span class="desc full">Ordem lógica de execução:</span>
+                <span class="desc full" style="font-family: monospace;">
+                    1.FROM <span class="arrow">→</span> 2.WHERE <span class="arrow">→</span> 3.GROUP BY <span class="arrow">→</span> 4.HAVING <span class="arrow">→</span> 5.SELECT <span class="arrow">→</span> 6.ORDER BY
+                </span>
+            </div>
+            <ul>
+                <li>
+                    <code>SELECT DISTINCT depto_id</code> 
+                    <span class="desc">Remove duplicatas</span>
+                </li>
+                <li>
+                    <code>nome AS "Nome Completo"</code> 
+                    <span class="desc">Alias c/ espaço exige aspas duplas</span>
+                </li>
+                <li>
+                    <code>ORDER BY 1 DESC, nome ASC</code> 
+                    <span class="desc">Ordena por col 1 e nome</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 2. FILTRAGEM -->
+        <section>
+            <h2>2. Filtragem (WHERE)</h2>
+            <ul>
+                <li>
+                    <code>BETWEEN '01-JAN-23' AND '31-JAN-23'</code> 
+                    <span class="desc">Intervalo inclusivo</span>
+                </li>
+                <li>
+                    <code>IN (10, 20, 30)</code> 
+                    <span class="desc">Lista exata</span>
+                </li>
+                <li>
+                    <code>LIKE 'Jo%'</code> / <code>LIKE '_a%'</code>
+                    <span class="desc">% (tudo), _ (1 char)</span>
+                </li>
+                <li>
+                    <code>IS NULL</code> / <code>IS NOT NULL</code>
+                    <span class="desc">Nunca use <code>= NULL</code></span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 3. FUNÇÕES DE TEXTO -->
+        <section>
+            <h2>3. Funções de Texto</h2>
+            <ul>
+                <li>
+                    <code>UPPER('sql')</code> <span class="desc ex">-> 'SQL'</span>
+                </li>
+                <li>
+                    <code>INITCAP('joao silva')</code> <span class="desc ex">-> 'Joao Silva'</span>
+                </li>
+                <li>
+                    <code>SUBSTR('Oracle', 2, 3)</code> <span class="desc ex">-> 'rac' (pos 2, len 3)</span>
+                </li>
+                <li>
+                    <code>INSTR('Oracle', 'a')</code> <span class="desc ex">-> 3 (pos encontrada)</span>
+                </li>
+                <li>
+                    <code>LENGTH('A B')</code> <span class="desc ex">-> 3</span>
+                </li>
+                <li>
+                    <code>TRIM('  x  ')</code> <span class="desc ex">-> 'x'</span>
+                </li>
+                <li>
+                    <code>REPLACE('ABC', 'B', 'Z')</code> <span class="desc ex">-> 'AZC'</span>
+                </li>
+                <li>
+                    <code>nome || ' ' || sobrenome</code> <span class="desc">Concatenação</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 4. FUNÇÕES NUMÉRICAS & NULL -->
+        <section>
+            <h2>4. Funções Numéricas & NULL</h2>
+            <ul>
+                <li>
+                    <code>ROUND(15.678, 2)</code> <span class="desc ex">-> 15.68</span>
+                </li>
+                <li>
+                    <code>TRUNC(15.678, 2)</code> <span class="desc ex">-> 15.67 (corta)</span>
+                </li>
+                <li>
+                    <code>MOD(10, 3)</code> <span class="desc ex">-> 1 (resto)</span>
+                </li>
+                <li>
+                    <code>NVL(comissao, 0)</code> <span class="desc">Se null, retorna 0</span>
+                </li>
+                <li>
+                    <code>COALESCE(tel1, tel2, 'S/N')</code> <span class="desc">1º não nulo</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 5. DATAS -->
+        <section>
+            <h2>5. Datas (Formatos)</h2>
+            <span class="note">Padrão visual: DD-MON-YY (ex: 31-DEC-23)</span>
+            <ul>
+                <li>
+                    <code>SYSDATE</code> <span class="desc">Agora (Data+Hora)</span>
+                </li>
+                <li>
+                    <code>TRUNC(SYSDATE)</code> <span class="desc">Hoje 00:00:00</span>
+                </li>
+                <li>
+                    <code>ADD_MONTHS(dt, 1)</code> <span class="desc">Soma 1 mês</span>
+                </li>
+                <li>
+                    <code>LAST_DAY(dt)</code> <span class="desc">Último dia do mês</span>
+                </li>
+                <li>
+                    <code>dt + 1</code> <span class="desc">Amanhã (Aritmética dias)</span>
+                </li>
+            </ul>
+            <div class="cmd-row" style="margin-top:4px;">
+                <span class="desc full"><strong>Conversão (Texto ↔ Data):</strong></span>
+                <code>TO_CHAR(sysdate, 'DD/MM/YYYY HH24:MI')</code>
+                <span class="desc ex full">-> '31/12/2023 14:30'</span>
+                <code>TO_DATE('2023-12-31', 'YYYY-MM-DD')</code>
+            </div>
+        </section>
+
+        <!-- 6. LÓGICA CONDICIONAL -->
+        <section>
+            <h2>6. Lógica Condicional (CASE)</h2>
+            <div class="cmd-row">
+                <code style="display:block; margin-bottom:2px;">CASE WHEN salario > 10000 THEN 'Alto'</code>
+                <code style="display:block; margin-bottom:2px; margin-left:35px;">WHEN salario > 5000  THEN 'Médio'</code>
+                <code style="display:block; margin-left:35px;">ELSE 'Baixo' END</code>
+            </div>
+            <div class="cmd-row" style="margin-top:6px;">
+                <span class="desc full"><strong>DECODE (Sintaxe Legada):</strong></span>
+                <code>DECODE(uf, 'SP', 'São Paulo', 'Outros')</code>
+            </div>
+        </section>
+
+        <!-- 7. JOINS -->
+        <section>
+            <h2>7. Joins (Junções ANSI)</h2>
+            <div class="cmd-row">
+                <code>FROM func f JOIN dept d ON f.dept_id = d.id</code>
+            </div>
+            <ul>
+                <li><code>INNER</code> <span class="desc">Só match em ambas</span></li>
+                <li><code>LEFT</code> <span class="desc">Toda Esq + Dir (ou NULL)</span></li>
+                <li><code>RIGHT</code> <span class="desc">Toda Dir + Esq (ou NULL)</span></li>
+                <li><code>FULL</code> <span class="desc">Tudo de ambas (A ∪ B)</span></li>
+                <li><code>CROSS</code> <span class="desc">Cartesiano (NxM linhas)</span></li>
+            </ul>
+        </section>
+
+        <!-- 8. AGREGAÇÃO -->
+        <section>
+            <h2>8. Agregação</h2>
+            <ul>
+                <li><code>COUNT(*)</code> <span class="desc">Conta linhas (inc. NULL)</span></li>
+                <li><code>COUNT(cpf)</code> <span class="desc">Conta valores (ignora NULL)</span></li>
+                <li><code>SUM(val) / AVG(val)</code> <span class="desc">Soma / Média</span></li>
+                <li><code>LISTAGG(nome, ', ')</code> <span class="desc">Lista: "Ana, Bob, ..."</span></li>
+            </ul>
+            <div class="cmd-row" style="margin-top:4px;">
+                <span class="desc full"><strong>HAVING (Filtro Pós-Grupo):</strong></span>
+                <code>GROUP BY depto HAVING SUM(sal) > 50000</code>
+            </div>
+        </section>
+
+        <!-- 9. SET OPERATORS -->
+        <section>
+            <h2>9. Operações de Conjunto</h2>
+            <ul>
+                <li><code>UNION ALL</code> <span class="desc">Junta tudo (Rápido, mantém dupl.)</span></li>
+                <li><code>UNION</code> <span class="desc">Junta e remove duplicatas (Sort)</span></li>
+                <li><code>INTERSECT</code> <span class="desc">Apenas o comum (A ∩ B)</span></li>
+                <li><code>MINUS</code> <span class="desc">Em A mas não em B (A - B)</span></li>
+            </ul>
+        </section>
+
+        <!-- 10. DML -->
+        <section>
+            <h2>10. DML & Transação</h2>
+            <ul>
+                <li>
+                    <code>INSERT INTO tab (c1) VALUES (1);</code>
+                </li>
+                <li>
+                    <code>UPDATE tab SET c1=2 WHERE id=1;</code>
+                </li>
+                <li>
+                    <code>DELETE FROM tab WHERE id=1;</code>
+                </li>
+                <li>
+                    <code>COMMIT / ROLLBACK;</code> <span class="desc">Salvar / Desfazer</span>
+                </li>
+                <li>
+                    <code>TRUNCATE TABLE tab;</code> <span class="desc">Limpa tudo (Instantâneo)</span>
+                </li>
+            </ul>
+            <div class="cmd-row" style="margin-top:4px;">
+                <span class="desc full"><strong>MERGE (Upsert):</strong></span>
+                <code>MERGE INTO target t USING source s ON (t.id=s.id)</code>
+                <code>WHEN MATCHED THEN UPDATE...</code>
+                <code>WHEN NOT MATCHED THEN INSERT...</code>
+            </div>
+        </section>
+
+        <!-- 11. AVANÇADO -->
+        <section>
+            <h2>11. Avançado (Engenharia)</h2>
+            <div class="cmd-row">
+                <span class="desc full"><strong>Window Functions (Analíticas):</strong></span>
+                <span class="note">Não agrupa linhas, calcula sobre janela.</span>
+                <code>FUNC() OVER (PARTITION BY col ORDER BY col)</code>
+            </div>
+            <ul>
+                <li><code>ROW_NUMBER()</code> <span class="desc">1, 2, 3 (Único p/ deduplicar)</span></li>
+                <li><code>RANK()</code> <span class="desc">1, 2, 2, 4 (Pula rankings)</span></li>
+                <li><code>DENSE_RANK()</code> <span class="desc">1, 2, 2, 3 (Não pula)</span></li>
+                <li><code>LEAD(val, 1)</code> <span class="desc">Valor da próxima linha</span></li>
+                <li><code>LAG(val, 1)</code> <span class="desc">Valor da linha anterior</span></li>
+            </ul>
+            <div class="cmd-row" style="margin-top:6px;">
+                <span class="desc full"><strong>CTE (Common Table Expression):</strong></span>
+                <code style="display:block; margin-bottom:2px;">WITH vendas_rj AS (</code>
+                <code style="display:block; margin-left:15px; margin-bottom:2px;">SELECT * FROM vendas WHERE uf='RJ'</code>
+                <code style="display:block;">) SELECT * FROM vendas_rj;</code>
+            </div>
+            <div class="cmd-row" style="margin-top:6px;">
+                <span class="desc full"><strong>Subqueries Especiais:</strong></span>
+                <ul>
+                    <li><code>WHERE EXISTS (SELECT 1...)</code> <span class="desc ex">Rápido p/ verificar existência</span></li>
+                    <li><code>WHERE col IN (1, 2...)</code> <span class="desc ex">Para listas pequenas</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 12. METADADOS -->
+        <section>
+            <h2>12. Dicionário de Dados</h2>
+            <ul>
+                <li><code>USER_TABLES</code> <span class="desc">Minhas tabelas</span></li>
+                <li><code>ALL_TAB_COLUMNS</code> <span class="desc">Colunas e Tipos</span></li>
+                <li><code>USER_INDEXES</code> <span class="desc">Meus Índices</span></li>
+                <li><code>USER_SOURCE</code> <span class="desc">Código PL/SQL (Procs/Views)</span></li>
+                <li><code>USER_CONSTRAINTS</code> <span class="desc">PKs, FKs</span></li>
+            </ul>
+        </section>
+
+        <!-- 13. PL/SQL BÁSICO -->
+        <section>
+            <h2>13. PL/SQL Básico (Blocos Anônimos)</h2>
+            <div class="cmd-row">
+                <span class="desc full" style="margin-bottom:3px;">Quando SQL puro não basta. Estrutura:</span>
+                <code style="display:block; margin-bottom:1px;">DECLARE v_var NUMBER;</code>
+                <code style="display:block; margin-bottom:1px;">BEGIN</code>
+                <code style="display:block; margin-left:12px; margin-bottom:1px;">SELECT count(*) INTO v_var FROM tab;</code>
+                <code style="display:block; margin-left:12px; margin-bottom:1px;">IF v_var > 10 THEN DBMS_OUTPUT.PUT_LINE('Msg'); END IF;</code>
+                <code style="display:block; margin-bottom:1px;">EXCEPTION WHEN NO_DATA_FOUND THEN ...;</code>
+                <code style="display:block;">END; /</code>
+            </div>
+            <span class="note">Atenção: <code>SELECT INTO</code> deve retornar exatas 1 linha.</span>
+        </section>
+        
+        <!-- NOTAS -->
+        <section style="border: 2px dashed #ccc; min-height: 60px; margin-top: 5px; break-inside: avoid;">
+            <h2 style="color: #999; border: none; padding: 0; font-size: 8pt;">Notas Manuais / Atalhos</h2>
+        </section>
+
+    </div>
+
+</body>
+</html>

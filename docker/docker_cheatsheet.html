@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Docker Cheatsheet (Production Ready)</title>
+    <!-- Fontes Otimizadas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0073ec; /* Docker Blue */
+            --header-bg: #e6f2ff;
+            --code-bg: #f4f6f8;
+            --text-color: #1a1a1a;
+            --comment-color: #666;
+            --border-color: #cce5ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 8pt;
+            line-height: 1.3;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0.5cm;
+            background-color: #fff;
+        }
+
+        /* Layout em 2 Colunas */
+        .container {
+            column-count: 2;
+            column-gap: 0.5cm;
+            width: 100%;
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            column-span: all;
+        }
+
+        h1 {
+            font-size: 16pt;
+            margin: 0;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+
+        h1 span { color: var(--primary-color); }
+
+        .meta {
+            font-size: 8pt;
+            color: var(--comment-color);
+            margin-top: 4px;
+        }
+
+        section {
+            break-inside: avoid;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 6px;
+        }
+
+        h2 {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #fff;
+            background-color: var(--primary-color);
+            margin: -6px -6px 6px -6px;
+            padding: 4px 8px;
+            border-radius: 3px 3px 0 0;
+            text-transform: uppercase;
+        }
+
+        /* Comandos */
+        .cmd-block {
+            margin-bottom: 6px;
+        }
+
+        .cmd-desc {
+            font-weight: 600;
+            color: #333;
+            font-size: 7.5pt;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.5pt;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 2px;
+            color: #b00020; /* Destaque leve para código */
+            display: block;
+            white-space: pre-wrap; /* Quebra linha se necessário */
+            border-left: 2px solid var(--border-color);
+        }
+
+        code.inline {
+            display: inline;
+            border: none;
+            padding: 1px 3px;
+        }
+
+        .note {
+            font-size: 7pt;
+            color: var(--comment-color);
+            font-style: italic;
+            margin-top: 2px;
+            display: block;
+        }
+
+        /* Tabela Dockerfile */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 7.5pt;
+        }
+        th, td {
+            text-align: left;
+            padding: 2px 4px;
+            border-bottom: 1px solid #eee;
+        }
+        th { font-weight: 800; color: var(--primary-color); }
+        td:first-child { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #000; }
+
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><span>Docker</span> Cheatsheet</h1>
+        <div class="meta">
+            Practical & Production-Oriented • 80/20 Principle • Containers, Images, Networks & Swarm
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. CONTAINER MANAGEMENT -->
+        <section>
+            <h2>1. Container Management (Core)</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Run in background (Auto-restart)</span>
+                <code>docker run -d --restart=always -p 80:80 --name web nginx</code>
+                <span class="note">-d: Detached | -p Host:Container</span>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Interactive Shell</span>
+                <code>docker exec -it &lt;name&gt; bash</code>
+                <span class="note">Se bash falhar (Alpine): <code>docker exec -it &lt;name&gt; sh</code></span>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">List Containers</span>
+                <code>docker ps        # Running only
+docker ps -a     # All (incl. stopped)</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Lifecycle</span>
+                <code>docker stop &lt;id&gt;
+docker start &lt;id&gt;
+docker rm &lt;id&gt;</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Cleanup Stopped Containers</span>
+                <code>docker container prune</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Monitoring & Debugging</span>
+                <code>docker stats &lt;id&gt;    # Real-time CPU/Mem
+docker top &lt;id&gt;      # Internal processes
+docker inspect &lt;id&gt;  # Metadata/IP/Env</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Logs</span>
+                <code>docker logs -f &lt;id&gt;  # Follow (tail -f)</code>
+            </div>
+        </section>
+
+        <!-- 2. IMAGE MANAGEMENT -->
+        <section>
+            <h2>2. Image Management</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Build & List</span>
+                <code>docker build -t my-image:v1 .
+docker images</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Analyze Layers</span>
+                <code>docker history &lt;image&gt;</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Offline Transfer (Save/Load)</span>
+                <code>docker save -o img.tar my-image:v1
+docker load -i img.tar</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Remove Images</span>
+                <code>docker rmi &lt;image&gt;</code>
+                <span class="note">Remove dangling (untagged):</span>
+                <code>docker rmi $(docker images -f "dangling=true" -q)</code>
+            </div>
+        </section>
+
+        <!-- 3. VOLUMES -->
+        <section>
+            <h2>3. Volumes & Persistence</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Create & Use</span>
+                <code>docker volume create db-data
+docker run -d -v db-data:/var/lib/mysql mysql</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Manage</span>
+                <code>docker volume ls
+docker volume inspect db-data</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Backup Volume (Advanced)</span>
+                <code>docker run --rm \
+  -v db-data:/volume \
+  -v $(pwd):/backup \
+  alpine tar cvf /backup/bkp.tar /volume</code>
+                <span class="note">Cria container temp, tar o volume, salva no host, destrói container.</span>
+            </div>
+        </section>
+
+        <!-- 4. NETWORKING -->
+        <section>
+            <h2>4. Networking</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Create Custom Bridge</span>
+                <code>docker network create my-net</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Run on Network</span>
+                <code>docker run -d --net my-net --name db mysql
+docker run -d --net my-net --name app python</code>
+                <span class="note">Containers conversam via hostname ('db', 'app')</span>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Connect Existing Container</span>
+                <code>docker network connect my-net container_id</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Audit</span>
+                <code>docker network ls
+docker network inspect my-net</code>
+            </div>
+        </section>
+
+        <!-- 5. DOCKER COMPOSE -->
+        <section>
+            <h2>5. Docker Compose</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Start (Background)</span>
+                <code>docker-compose up -d</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Logs & Scaling</span>
+                <code>docker-compose logs -f
+docker-compose scale worker=3</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Stop & Clean</span>
+                <code>docker-compose down
+docker-compose down -v  # Remove volumes too!</code>
+            </div>
+        </section>
+
+        <!-- 6. SWARM (Orchestration) -->
+        <section>
+            <h2>6. Docker Swarm</h2>
+            
+            <div class="cmd-block">
+                <span class="cmd-desc">Setup</span>
+                <code>docker swarm init
+docker node ls</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Services</span>
+                <code>docker service create --replicas 3 -p 80:80 nginx
+docker service scale my-service=5</code>
+            </div>
+
+            <div class="cmd-block">
+                <span class="cmd-desc">Monitor</span>
+                <code>docker service ls
+docker service ps &lt;service_name&gt;</code>
+            </div>
+        </section>
+
+        <!-- 7. DOCKERFILE -->
+        <section>
+            <h2>7. Dockerfile Reference</h2>
+            <table>
+                <tr><td>FROM</td><td>Base image (use version/alpine).</td></tr>
+                <tr><td>WORKDIR</td><td>Sets working directory.</td></tr>
+                <tr><td>COPY</td><td>Host files -> Image (prefer over ADD).</td></tr>
+                <tr><td>RUN</td><td>Build commands (join with &&).</td></tr>
+                <tr><td>ENV</td><td>Environment variables.</td></tr>
+                <tr><td>EXPOSE</td><td>Documentation for ports.</td></tr>
+                <tr><td>CMD</td><td>Default command (easy override).</td></tr>
+                <tr><td>ENTRYPOINT</td><td>Main executable (hard override).</td></tr>
+            </table>
+        </section>
+
+        <!-- 8. SYSTEM CLEANUP -->
+        <section>
+            <h2>8. System Cleanup</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Prune Unused</span>
+                <code>docker system prune</code>
+            </div>
+            <div class="cmd-block" style="border-left: 3px solid red; padding-left: 4px;">
+                <span class="cmd-desc" style="color:red;">Full Nuke (Dangerous)</span>
+                <code>docker system prune -a --volumes</code>
+                <span class="note">Apaga containers parados, imagens não usadas, redes e volumes.</span>
+            </div>
+        </section>
+
+        <!-- FINAL TIP -->
+        <section style="background-color: #f0f8ff; border: 1px dashed var(--primary-color);">
+            <div class="cmd-desc" style="text-align:center; margin-bottom:4px;">★ Top 5 Comandos (Memória Muscular) ★</div>
+            <code style="text-align:center; background:none; border:none; color:#000;">docker run &bull; docker ps &bull; docker logs &bull; docker exec &bull; docker-compose up</code>
+        </section>
+
+    </div>
+
+</body>
+</html>

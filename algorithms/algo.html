@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Engineering Cheatsheet - Algoritmos & Estruturas de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+        /* Base */
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-print-color-adjust: exact;
+            background: #0b0f19; /* dark sólido (menos azulado) */
+            color: #e5e7eb;
+        }
+    
+        code, pre { 
+            font-family: 'JetBrains Mono', monospace; 
+        }
+    
+        h1, h2, h3 {
+            color: #f9fafb;
+            font-weight: 700;
+        }
+    
+        /* Print */
+        @media print {
+            body {
+                background: #0b0f19;
+                color: #e5e7eb;
+                font-size: 10px;
+            }
+            .no-print { display: none; }
+            pre { font-size: 0.65rem !important; }
+        }
+    
+        /* Containers / Cards */
+        .bg-slate-800 {
+            background: #111827 !important; /* cinza escuro neutro */
+        }
+    
+        .bg-slate-900 {
+            background: #0f172a !important;
+        }
+    
+        .border-slate-700 {
+            border-color: #374151 !important;
+        }
+    
+        /* Header */
+        header {
+            background: #0b0f19 !important;
+            border-bottom: 1px solid #374151;
+        }
+    
+        header h1 span {
+            color: #60a5fa; /* azul claro legível */
+        }
+    
+        header p {
+            color: #9ca3af;
+        }
+    
+        /* Text */
+        .text-white { color: #f9fafb !important; }
+        .text-gray-100 { color: #e5e7eb !important; }
+        .text-gray-300 { color: #d1d5db !important; }
+        .text-gray-400 { color: #9ca3af !important; }
+    
+        /* Tables */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+    
+        th, td {
+            border: 1px solid #374151;
+            padding: 0.5rem;
+            color: #e5e7eb;
+        }
+    
+        th {
+            background: #020617;
+            color: #f9fafb;
+            font-weight: 600;
+        }
+    
+        tr:nth-child(even) {
+            background: #020617;
+        }
+    
+        /* Code blocks */
+        pre {
+            background: #020617;
+            border: 1px solid #374151;
+            color: #e5e7eb;
+            padding: 0.6rem !important;
+            line-height: 1.35 !important;
+        }
+    
+        .token.comment {
+            color: #94a3b8;
+            font-style: italic;
+        }
+    
+        /* Badges */
+        .badge {
+            background: #020617;
+            border: 1px solid #475569;
+            color: #e5e7eb;
+            font-weight: 600;
+        }
+    
+        /* Highlights inline */
+        .code-highlight {
+            background: #020617;
+            border: 1px solid #475569;
+            color: #f9fafb;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+    
+        /* Accent borders (funcionam mesmo em impressão escura) */
+        .border-blue-500   { border-left-color: #60a5fa !important; }
+        .border-green-500  { border-left-color: #34d399 !important; }
+        .border-purple-500 { border-left-color: #c084fc !important; }
+        .border-orange-500 { border-left-color: #fb923c !important; }
+    
+        /* TOC */
+        .toc-sticky {
+            background: #111827;
+            border: 1px solid #374151;
+        }
+    
+        .toc-sticky a {
+            color: #d1d5db;
+        }
+    
+        .toc-sticky a:hover {
+            color: #60a5fa;
+        }
+    </style>   
+</head>
+<body class="text-gray-100">
+
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                        Data Engineering <span class="text-blue-400">Cheatsheet</span>
+                    </h1>
+                    <p class="text-xs md:text-sm text-gray-400 mt-1">Algoritmos • Estruturas • Padrões • Otimizações • Big Data</p>
+                </div>
+                <div class="flex gap-2 flex-wrap justify-end">
+                    <span class="badge badge-blue">Python</span>
+                    <span class="badge badge-green">Spark</span>
+                    <span class="badge badge-orange">Airflow</span>
+                    <span class="badge badge-purple">Distribuído</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-4 md:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                
+                <!-- Sidebar TOC -->
+                <aside class="lg:col-span-1 no-print">
+                    <div class="toc-sticky bg-slate-800 rounded-lg p-4 border border-slate-700">
+                        <h3 class="text-sm font-bold text-blue-400 mb-4 uppercase">Índice</h3>
+                        <nav class="space-y-2 text-sm">
+                            <a href="#big-o" class="block text-gray-300 hover:text-blue-400 transition">📊 Big-O Complexity</a>
+                            <a href="#sorting" class="block text-gray-300 hover:text-blue-400 transition">🔀 Sorting Algorithms</a>
+                            <a href="#searching" class="block text-gray-300 hover:text-blue-400 transition">🔍 Searching & Binary</a>
+                            <a href="#arrays" class="block text-gray-300 hover:text-blue-400 transition">📦 Arrays & Streams</a>
+                            <a href="#hashing" class="block text-gray-300 hover:text-blue-400 transition">🗝️ Hash Maps</a>
+                            <a href="#linked-list" class="block text-gray-300 hover:text-blue-400 transition">⛓️ Linked Lists</a>
+                            <a href="#stacks-queues" class="block text-gray-300 hover:text-blue-400 transition">📚 Stacks & Queues</a>
+                            <a href="#trees" class="block text-gray-300 hover:text-blue-400 transition">🌳 Trees</a>
+                            <a href="#graphs" class="block text-gray-300 hover:text-blue-400 transition">🕸️ Graphs & DAGs</a>
+                            <a href="#heaps" class="block text-gray-300 hover:text-blue-400 transition">⛰️ Heaps</a>
+                            <a href="#dynamic-prog" class="block text-gray-300 hover:text-blue-400 transition">💡 Dynamic Programming</a>
+                            <a href="#bit-manipulation" class="block text-gray-300 hover:text-blue-400 transition">⚙️ Bit Manipulation</a>
+                            <a href="#de-patterns" class="block text-gray-300 hover:text-blue-400 transition">🔧 DE Patterns</a>
+                        </nav>
+                    </div>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="lg:col-span-3 space-y-8">
+
+                    <!-- BIG-O COMPLEXITY -->
+                    <section id="big-o" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">📊</span>
+                            <h2 class="text-2xl font-bold text-white">Big-O Complexity</h2>
+                        </div>
+                        
+                        <div class="bg-slate-900 rounded p-4 mb-4 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-300"><strong>Ordem de Crescimento:</strong> O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!)</p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="text-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Estrutura</th>
+                                        <th>Acesso</th>
+                                        <th>Busca</th>
+                                        <th>Inserção</th>
+                                        <th>Deleção</th>
+                                        <th>Espaço</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Array</td><td>Θ(1)</td><td>Θ(n)</td><td>Θ(n)</td><td>Θ(n)</td><td>O(n)</td></tr>
+                                    <tr><td>Stack</td><td>Θ(n)</td><td>Θ(n)</td><td>Θ(1)</td><td>Θ(1)</td><td>O(n)</td></tr>
+                                    <tr><td>Queue</td><td>Θ(n)</td><td>Θ(n)</td><td>Θ(1)</td><td>Θ(1)</td><td>O(n)</td></tr>
+                                    <tr><td>Linked List</td><td>Θ(n)</td><td>Θ(n)</td><td>Θ(1)</td><td>Θ(1)</td><td>O(n)</td></tr>
+                                    <tr><td>Hash Table</td><td>N/A</td><td>Θ(1)</td><td>Θ(1)</td><td>Θ(1)</td><td>O(n)</td></tr>
+                                    <tr><td>BST</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>O(n)</td></tr>
+                                    <tr><td>AVL Tree</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>O(n)</td></tr>
+                                    <tr><td>Red-Black Tree</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>O(n)</td></tr>
+                                    <tr><td>B-Tree</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>Θ(log n)</td><td>O(n)</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- SORTING ALGORITHMS -->
+                    <section id="sorting" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🔀</span>
+                            <h2 class="text-2xl font-bold text-white">Sorting Algorithms</h2>
+                        </div>
+
+                        <div class="overflow-x-auto mb-6">
+                            <table class="text-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Algoritmo</th>
+                                        <th>Melhor</th>
+                                        <th>Médio</th>
+                                        <th>Pior</th>
+                                        <th>Espaço</th>
+                                        <th>Estável?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Quicksort</td><td>Ω(n log n)</td><td>Θ(n log n)</td><td>O(n²)</td><td>O(log n)</td><td>Não</td></tr>
+                                    <tr><td>Mergesort</td><td>Ω(n log n)</td><td>Θ(n log n)</td><td>O(n log n)</td><td>O(n)</td><td>Sim</td></tr>
+                                    <tr><td>Timsort</td><td>Ω(n)</td><td>Θ(n log n)</td><td>O(n log n)</td><td>O(n)</td><td>Sim</td></tr>
+                                    <tr><td>Heapsort</td><td>Ω(n log n)</td><td>Θ(n log n)</td><td>O(n log n)</td><td>O(1)</td><td>Não</td></tr>
+                                    <tr><td>Bubble Sort</td><td>Ω(n)</td><td>Θ(n²)</td><td>O(n²)</td><td>O(1)</td><td>Sim</td></tr>
+                                    <tr><td>Insertion Sort</td><td>Ω(n)</td><td>Θ(n²)</td><td>O(n²)</td><td>O(1)</td><td>Sim</td></tr>
+                                    <tr><td>Radix Sort</td><td>Ω(nk)</td><td>Θ(nk)</td><td>O(nk)</td><td>O(n+k)</td><td>Sim</td></tr>
+                                    <tr><td>Counting Sort</td><td>Ω(n+k)</td><td>Θ(n+k)</td><td>O(n+k)</td><td>O(k)</td><td>Sim</td></tr>
+                                    <tr><td>Bucket Sort</td><td>Ω(n+k)</td><td>Θ(n+k)</td><td>O(n²)</td><td>O(n)</td><td>Sim</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-slate-900 rounded p-4 border-l-4 border-green-500">
+                                <h3 class="font-bold text-green-400 mb-2">💡 Data Engineering Context</h3>
+                                <ul class="text-sm text-gray-300 space-y-1">
+                                    <li>• <strong>Spark Shuffle:</strong> Usa Timsort internamente; reduzir largura de shuffle é crítico</li>
+                                    <li>• <strong>Python sort():</strong> Timsort adaptativo - O(n) em dados parcialmente ordenados</li>
+                                    <li>• <strong>External Merge Sort:</strong> Para dados > memória (MapReduce, Database Sort)</li>
+                                    <li>• <strong>Radix Sort:</strong> Ideal para chaves inteiras em processamento paralelo</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">External Merge Sort (Dados em Disco)</h3>
+                                <pre><code class="language-python"># Estratégia: Chunk → Sort → K-Way Merge
+import heapq
+
+def external_merge_sort(filename, chunk_size=1000):
+    # 1. Particionar arquivo em chunks e ordenar cada um
+    chunks = []
+    with open(filename) as f:
+        chunk = []
+        for line in f:
+            chunk.append(int(line.strip()))
+            if len(chunk) == chunk_size:
+                chunks.append(sorted(chunk))
+                chunk = []
+        if chunk:
+            chunks.append(sorted(chunk))
+    
+    # 2. K-Way Merge usando heap
+    heap = []
+    for i, chunk in enumerate(chunks):
+        if chunk:
+            heapq.heappush(heap, (chunk[0], i, 0))
+    
+    result = []
+    while heap:
+        val, chunk_idx, elem_idx = heapq.heappop(heap)
+        result.append(val)
+        if elem_idx + 1 < len(chunks[chunk_idx]):
+            heapq.heappush(heap, 
+                (chunks[chunk_idx][elem_idx + 1], chunk_idx, elem_idx + 1))
+    
+    return result</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- SEARCHING & BINARY SEARCH -->
+                    <section id="searching" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🔍</span>
+                            <h2 class="text-2xl font-bold text-white">Searching & Binary Search</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Binary Search Clássico</h3>
+                                <pre><code class="language-python">def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1  # Não encontrado</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Binary Search em Resposta (Capacity Planning)</h3>
+                                <p class="text-sm text-gray-300 mb-2">Encontrar capacidade mínima que satisfaz SLA</p>
+                                <pre><code class="language-python">def find_min_capacity(max_latency_ms, data_volume_gb):
+    def can_process(capacity_gb):
+        # Simular: latência = volume / (capacity * throughput)
+        throughput = 100  # MB/s
+        latency = (data_volume_gb * 1024) / (capacity_gb * throughput)
+        return latency <= max_latency_ms
+    
+    left, right = 1, 10000  # Intervalo de capacidade
+    while left < right:
+        mid = (left + right) // 2
+        if can_process(mid):
+            right = mid  # Tentar menor
+        else:
+            left = mid + 1  # Aumentar
+    
+    return left  # Capacidade mínima viável</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Busca em Posição (Partition Boundaries)</h3>
+                                <pre><code class="language-python">def find_first_occurrence(arr, target):
+    """Encontra primeira ocorrência em array com duplicatas"""
+    left, right = 0, len(arr) - 1
+    result = -1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            result = mid
+            right = mid - 1  # Continua procurando à esquerda
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return result</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ARRAYS & STREAMS -->
+                    <section id="arrays" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">📦</span>
+                            <h2 class="text-2xl font-bold text-white">Arrays, Streams & Windows</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Sliding Window (Time Windows)</h3>
+                                <p class="text-sm text-gray-300 mb-2">Ideal para agregações em tempo real, rolling statistics</p>
+                                <pre><code class="language-python">def sliding_window(data, window_size):
+    """Calcula soma móvel com janela deslizante"""
+    result = []
+    left = 0
+    current_sum = 0
+    
+    for right in range(len(data)):
+        current_sum += data[right]
+        
+        # Contrai janela se necessário
+        while right - left + 1 > window_size:
+            current_sum -= data[left]
+            left += 1
+        
+        if right - left + 1 == window_size:
+            result.append(current_sum)
+    
+    return result
+
+# Uso: Agregação em stream de eventos
+events = [10, 20, 30, 40, 50, 60]
+print(sliding_window(events, 3))  # [60, 90, 120, 150]</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Prefix Sum (Range Queries)</h3>
+                                <p class="text-sm text-gray-300 mb-2">O(1) queries após O(n) preprocessing</p>
+                                <pre><code class="language-python">class PrefixSum:
+    def __init__(self, arr):
+        self.prefix = [0]
+        for x in arr:
+            self.prefix.append(self.prefix[-1] + x)
+    
+    def range_sum(self, i, j):
+        """Soma de arr[i:j+1] em O(1)"""
+        return self.prefix[j + 1] - self.prefix[i]
+
+# Uso: Milhões de range queries em dados estáticos
+ps = PrefixSum([1, 2, 3, 4, 5])
+print(ps.range_sum(1, 3))  # 2+3+4 = 9</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Two Pointers (Merge Sorted Streams)</h3>
+                                <pre><code class="language-python">def merge_sorted_streams(arr1, arr2):
+    """Mescla dois arrays ordenados em O(n+m)"""
+    i = j = 0
+    result = []
+    
+    while i < len(arr1) and j < len(arr2):
+        if arr1[i] <= arr2[j]:
+            result.append(arr1[i])
+            i += 1
+        else:
+            result.append(arr2[j])
+            j += 1
+    
+    # Adiciona restante
+    result.extend(arr1[i:])
+    result.extend(arr2[j:])
+    return result</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- HASH MAPS -->
+                    <section id="hashing" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🗝️</span>
+                            <h2 class="text-2xl font-bold text-white">Hash Maps & Hashing</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-slate-900 rounded p-4 border-l-4 border-purple-500">
+                                <h3 class="font-bold text-purple-400 mb-2">Colisões & Resolução</h3>
+                                <ul class="text-sm text-gray-300 space-y-1">
+                                    <li>• <strong>Chaining:</strong> Lista ligada por bucket (Python dict usa isso)</li>
+                                    <li>• <strong>Open Addressing:</strong> Probing linear, quadrático ou duplo hash</li>
+                                    <li>• <strong>Load Factor:</strong> α = n/m; rehash quando α > 0.75</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Contagem de Subarrays com Critério Exato</h3>
+                                <pre><code class="language-python">from collections import defaultdict
+
+def count_subarrays_with_sum(arr, k):
+    """Conta subarrays cuja soma = k em O(n)"""
+    counts = defaultdict(int)
+    counts[0] = 1  # Subarray vazio
+    current_sum = 0
+    result = 0
+    
+    for num in arr:
+        current_sum += num
+        # Procura por (current_sum - k) no histórico
+        result += counts[current_sum - k]
+        counts[current_sum] += 1
+    
+    return result
+
+# Uso: Encontrar subarrays com soma específica
+print(count_subarrays_with_sum([1, 1, 1, 2, 1, 1], 3))  # 4</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Sliding Window com Hash Set (Duplicatas)</h3>
+                                <pre><code class="language-python">def longest_substring_without_duplicates(s):
+    """Maior substring sem caracteres repetidos"""
+    char_set = set()
+    left = 0
+    max_len = 0
+    
+    for right in range(len(s)):
+        while s[right] in char_set:
+            char_set.remove(s[left])
+            left += 1
+        char_set.add(s[right])
+        max_len = max(max_len, right - left + 1)
+    
+    return max_len</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- LINKED LISTS -->
+                    <section id="linked-list" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">⛓️</span>
+                            <h2 class="text-2xl font-bold text-white">Linked Lists</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Fast & Slow Pointer (Detecção de Ciclo)</h3>
+                                <pre><code class="language-python">class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+def has_cycle(head):
+    """Floyd's Cycle Detection - O(n) espaço O(1)"""
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow == fast:
+            return True
+    return False
+
+def find_cycle_start(head):
+    """Encontra nó onde ciclo começa"""
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow == fast:
+            break
+    
+    if not fast or not fast.next:
+        return None
+    
+    slow = head
+    while slow != fast:
+        slow = slow.next
+        fast = fast.next
+    return slow</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Reverse Linked List</h3>
+                                <pre><code class="language-python">def reverse_linked_list(head):
+    """Inverte lista ligada em O(n) tempo, O(1) espaço"""
+    prev = None
+    curr = head
+    while curr:
+        nxt = curr.next  # Salva próximo
+        curr.next = prev  # Inverte apontador
+        prev = curr       # Move prev
+        curr = nxt        # Move curr
+    return prev
+
+def reverse_between(head, left, right):
+    """Inverte apenas entre posições left e right"""
+    if left == right:
+        return head
+    
+    dummy = ListNode(0)
+    dummy.next = head
+    prev = dummy
+    
+    # Move até left
+    for _ in range(left - 1):
+        prev = prev.next
+    
+    # Inverte seção
+    curr = prev.next
+    for _ in range(right - left):
+        nxt = curr.next
+        curr.next = nxt.next
+        nxt.next = prev.next
+        prev.next = nxt
+    
+    return dummy.next</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- STACKS & QUEUES -->
+                    <section id="stacks-queues" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">📚</span>
+                            <h2 class="text-2xl font-bold text-white">Stacks & Queues</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Monotonic Stack (Próximo Elemento Maior)</h3>
+                                <pre><code class="language-python">def next_greater_element(arr):
+    """Encontra próximo elemento maior para cada posição"""
+    stack = []
+    result = [-1] * len(arr)
+    
+    for i in range(len(arr) - 1, -1, -1):
+        while stack and stack[-1] <= arr[i]:
+            stack.pop()
+        if stack:
+            result[i] = stack[-1]
+        stack.append(arr[i])
+    
+    return result
+
+# Uso: [4, 5, 2, 25] → [5, 25, 25, -1]</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Monotonic Decreasing Stack</h3>
+                                <pre><code class="language-python">def largest_rectangle_in_histogram(heights):
+    """Maior retângulo em histograma - O(n)"""
+    stack = []
+    max_area = 0
+    
+    for i, h in enumerate(heights):
+        start = i
+        while stack and stack[-1][1] > h:
+            idx, height = stack.pop()
+            area = height * (i - idx)
+            max_area = max(max_area, area)
+            start = idx
+        if h > 0:
+            stack.append((start, h))
+    
+    for idx, height in stack:
+        area = height * (len(heights) - idx)
+        max_area = max(max_area, area)
+    
+    return max_area</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Queue com Deque (Sliding Window Max)</h3>
+                                <pre><code class="language-python">from collections import deque
+
+def sliding_window_maximum(arr, k):
+    """Máximo em cada janela deslizante - O(n)"""
+    dq = deque()
+    result = []
+    
+    for i in range(len(arr)):
+        # Remove elementos fora da janela
+        while dq and dq[0][1] < i - k + 1:
+            dq.popleft()
+        
+        # Remove elementos menores que o atual
+        while dq and dq[-1][0] <= arr[i]:
+            dq.pop()
+        
+        dq.append((arr[i], i))
+        
+        if i >= k - 1:
+            result.append(dq[0][0])
+    
+    return result</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- TREES -->
+                    <section id="trees" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🌳</span>
+                            <h2 class="text-2xl font-bold text-white">Trees & Traversals</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">DFS Recursivo (Inorder, Preorder, Postorder)</h3>
+                                <pre><code class="language-python">class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+def inorder_traversal(root):
+    """Esquerda → Raiz → Direita (BST ordenado)"""
+    result = []
+    def dfs(node):
+        if not node:
+            return
+        dfs(node.left)
+        result.append(node.val)
+        dfs(node.right)
+    dfs(root)
+    return result
+
+def preorder_traversal(root):
+    """Raiz → Esquerda → Direita (Copiar árvore)"""
+    result = []
+    def dfs(node):
+        if not node:
+            return
+        result.append(node.val)
+        dfs(node.left)
+        dfs(node.right)
+    dfs(root)
+    return result
+
+def postorder_traversal(root):
+    """Esquerda → Direita → Raiz (Deletar árvore)"""
+    result = []
+    def dfs(node):
+        if not node:
+            return
+        dfs(node.left)
+        dfs(node.right)
+        result.append(node.val)
+    dfs(root)
+    return result</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">BFS (Level Order Traversal)</h3>
+                                <pre><code class="language-python">from collections import deque
+
+def level_order_traversal(root):
+    """Nível por nível - ideal para lineage tracking"""
+    if not root:
+        return []
+    
+    result = []
+    queue = deque([root])
+    
+    while queue:
+        level_size = len(queue)
+        current_level = []
+        
+        for _ in range(level_size):
+            node = queue.popleft()
+            current_level.append(node.val)
+            
+            if node.left:
+                queue.append(node.left)
+            if node.right:
+                queue.append(node.right)
+        
+        result.append(current_level)
+    
+    return result</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Binary Search Tree (BST) Validação</h3>
+                                <pre><code class="language-python">def is_valid_bst(root):
+    """Valida se árvore é BST válida"""
+    def validate(node, min_val, max_val):
+        if not node:
+            return True
+        
+        if node.val <= min_val or node.val >= max_val:
+            return False
+        
+        return (validate(node.left, min_val, node.val) and
+                validate(node.right, node.val, max_val))
+    
+    return validate(root, float('-inf'), float('inf'))</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- GRAPHS & DAGs -->
+                    <section id="graphs" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🕸️</span>
+                            <h2 class="text-2xl font-bold text-white">Graphs & DAGs (Pipelines)</h2>
+                        </div>
+
+                        <div class="bg-slate-900 rounded p-4 mb-4 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-300"><strong>DAG = Directed Acyclic Graph:</strong> Estrutura fundamental de pipelines (Airflow, Spark, dbt). Sem ciclos = execução determinística.</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Topological Sort (Kahn's Algorithm)</h3>
+                                <p class="text-sm text-gray-300 mb-2">Determina ordem de execução de tasks em DAG</p>
+                                <pre><code class="language-python">from collections import deque, defaultdict
+
+def topological_sort(tasks, dependencies):
+    """Ordena tasks respeitando dependências"""
+    graph = defaultdict(list)
+    indegree = {t: 0 for t in tasks}
+    
+    for u, v in dependencies:  # u → v (u precisa rodar antes de v)
+        graph[u].append(v)
+        indegree[v] += 1
+    
+    queue = deque([t for t in tasks if indegree[t] == 0])
+    order = []
+    
+    while queue:
+        task = queue.popleft()
+        order.append(task)
+        
+        for dependent in graph[task]:
+            indegree[dependent] -= 1
+            if indegree[dependent] == 0:
+                queue.append(dependent)
+    
+    # Se ordem.length < tasks.length, há ciclo!
+    if len(order) != len(tasks):
+        return None  # Ciclo detectado
+    
+    return order
+
+# Uso: Airflow DAG execution
+tasks = ['extract', 'transform', 'load', 'validate']
+deps = [('extract', 'transform'), ('transform', 'load'), ('load', 'validate')]
+print(topological_sort(tasks, deps))
+# → ['extract', 'transform', 'load', 'validate']</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">DFS para Detecção de Ciclo</h3>
+                                <pre><code class="language-python">def has_cycle_dfs(graph):
+    """Detecta ciclo em grafo dirigido"""
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {node: WHITE for node in graph}
+    
+    def dfs(node):
+        if color[node] == GRAY:
+            return True  # Ciclo encontrado
+        if color[node] == BLACK:
+            return False
+        
+        color[node] = GRAY
+        for neighbor in graph.get(node, []):
+            if dfs(neighbor):
+                return True
+        color[node] = BLACK
+        return False
+    
+    for node in graph:
+        if color[node] == WHITE:
+            if dfs(node):
+                return True
+    return False</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Dijkstra (Shortest Path - Cost Optimization)</h3>
+                                <pre><code class="language-python">import heapq
+
+def dijkstra(graph, start):
+    """Caminho mais curto com pesos positivos"""
+    distances = {node: float('inf') for node in graph}
+    distances[start] = 0
+    pq = [(0, start)]
+    
+    while pq:
+        curr_dist, node = heapq.heappop(pq)
+        
+        if curr_dist > distances[node]:
+            continue  # Skip stale entry
+        
+        for neighbor, weight in graph[node]:
+            distance = curr_dist + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                heapq.heappush(pq, (distance, neighbor))
+    
+    return distances
+
+# Uso: Otimizar rota de dados com custos (latência, bandwidth)
+graph = {
+    'A': [('B', 4), ('C', 2)],
+    'B': [('C', 1), ('D', 5)],
+    'C': [('D', 8), ('E', 10)],
+    'D': [('E', 2)],
+    'E': []
+}
+print(dijkstra(graph, 'A'))
+# → {'A': 0, 'B': 4, 'C': 2, 'D': 10, 'E': 12}</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Union-Find (Entity Resolution)</h3>
+                                <pre><code class="language-python">class UnionFind:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.rank = [1] * n
+    
+    def find(self, x):
+        """Path compression"""
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+    
+    def union(self, x, y):
+        """Union by rank"""
+        root_x, root_y = self.find(x), self.find(y)
+        if root_x == root_y:
+            return False
+        
+        if self.rank[root_x] < self.rank[root_y]:
+            self.parent[root_x] = root_y
+        elif self.rank[root_x] > self.rank[root_y]:
+            self.parent[root_y] = root_x
+        else:
+            self.parent[root_y] = root_x
+            self.rank[root_x] += 1
+        return True
+    
+    def connected(self, x, y):
+        return self.find(x) == self.find(y)
+
+# Uso: Agrupar IDs duplicados em dataset
+uf = UnionFind(6)
+uf.union(0, 1)  # Mesmo cliente
+uf.union(2, 3)  # Mesmo cliente
+print([uf.find(i) for i in range(6)])  # Agrupa por raiz</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- HEAPS -->
+                    <section id="heaps" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">⛰️</span>
+                            <h2 class="text-2xl font-bold text-white">Heaps & Priority Queues</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Top K Elements (Min Heap)</h3>
+                                <pre><code class="language-python">import heapq
+
+def find_top_k(arr, k):
+    """Top K elementos maiores usando min-heap"""
+    heap = []
+    for num in arr:
+        if len(heap) < k:
+            heapq.heappush(heap, num)
+        elif num > heap[0]:
+            heapq.heapreplace(heap, num)
+    return sorted(heap, reverse=True)
+
+def find_top_k_frequent(arr, k):
+    """Top K elementos mais frequentes"""
+    from collections import Counter
+    count = Counter(arr)
+    # Min heap de tamanho k
+    heap = []
+    for num, freq in count.items():
+        if len(heap) < k:
+            heapq.heappush(heap, (freq, num))
+        elif freq > heap[0][0]:
+            heapq.heapreplace(heap, (freq, num))
+    return [num for freq, num in heap]</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Merge K Sorted Lists</h3>
+                                <pre><code class="language-python">def merge_k_sorted_lists(lists):
+    """Mescla K listas ordenadas - O(n log k)"""
+    heap = []
+    
+    # Adiciona primeiro elemento de cada lista
+    for i, lst in enumerate(lists):
+        if lst:
+            heapq.heappush(heap, (lst[0], i, 0))
+    
+    result = []
+    while heap:
+        val, list_idx, elem_idx = heapq.heappop(heap)
+        result.append(val)
+        
+        # Adiciona próximo elemento da mesma lista
+        if elem_idx + 1 < len(lists[list_idx]):
+            next_val = lists[list_idx][elem_idx + 1]
+            heapq.heappush(heap, (next_val, list_idx, elem_idx + 1))
+    
+    return result</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- DYNAMIC PROGRAMMING -->
+                    <section id="dynamic-prog" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">💡</span>
+                            <h2 class="text-2xl font-bold text-white">Dynamic Programming</h2>
+                        </div>
+
+                        <div class="bg-slate-900 rounded p-4 mb-4 border-l-4 border-green-500">
+                            <p class="text-sm text-gray-300"><strong>Padrão DP:</strong> Subproblemas sobrepostos + Subestrutura ótima = Memoização</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Fibonacci (Memoização)</h3>
+                                <pre><code class="language-python">def fib_memo(n, memo={}):
+    """Fibonacci com memoização - O(n)"""
+    if n in memo:
+        return memo[n]
+    if n <= 1:
+        return n
+    
+    memo[n] = fib_memo(n-1, memo) + fib_memo(n-2, memo)
+    return memo[n]
+
+def fib_dp(n):
+    """Fibonacci com tabulação - O(n) espaço O(n)"""
+    if n <= 1:
+        return n
+    dp = [0] * (n + 1)
+    dp[1] = 1
+    for i in range(2, n + 1):
+        dp[i] = dp[i-1] + dp[i-2]
+    return dp[n]
+
+def fib_optimized(n):
+    """Fibonacci otimizado - O(1) espaço"""
+    if n <= 1:
+        return n
+    prev, curr = 0, 1
+    for _ in range(2, n + 1):
+        prev, curr = curr, prev + curr
+    return curr</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Coin Change (Mínimo de Moedas)</h3>
+                                <pre><code class="language-python">def coin_change(coins, amount):
+    """Mínimo de moedas para fazer valor"""
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    
+    for i in range(1, amount + 1):
+        for coin in coins:
+            if coin <= i:
+                dp[i] = min(dp[i], dp[i - coin] + 1)
+    
+    return dp[amount] if dp[amount] != float('inf') else -1
+
+# Uso: Otimizar custos de transferência de dados
+print(coin_change([1, 2, 5], 5))  # 1 moeda de 5</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Longest Increasing Subsequence (LIS)</h3>
+                                <pre><code class="language-python">def longest_increasing_subsequence(arr):
+    """LIS - O(n log n) com binary search"""
+    import bisect
+    
+    tails = []  # tails[i] = menor tail de LIS de tamanho i+1
+    
+    for num in arr:
+        pos = bisect.bisect_left(tails, num)
+        if pos == len(tails):
+            tails.append(num)
+        else:
+            tails[pos] = num
+    
+    return len(tails)</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- BIT MANIPULATION -->
+                    <section id="bit-manipulation" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">⚙️</span>
+                            <h2 class="text-2xl font-bold text-white">Bit Manipulation</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-slate-900 rounded p-4 border-l-4 border-orange-500">
+                                <h3 class="font-bold text-orange-400 mb-2">Operações Básicas</h3>
+                                <ul class="text-sm text-gray-300 space-y-1 font-mono">
+                                    <li>• <code class="code-highlight">a & b</code> - AND (ambos 1)</li>
+                                    <li>• <code class="code-highlight">a | b</code> - OR (pelo menos um 1)</li>
+                                    <li>• <code class="code-highlight">a ^ b</code> - XOR (diferentes)</li>
+                                    <li>• <code class="code-highlight">~a</code> - NOT (inverte todos)</li>
+                                    <li>• <code class="code-highlight">a << n</code> - Left shift (multiplica por 2ⁿ)</li>
+                                    <li>• <code class="code-highlight">a >> n</code> - Right shift (divide por 2ⁿ)</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Single Number (XOR Magic)</h3>
+                                <pre><code class="language-python">def single_number(arr):
+    """Encontra número que aparece uma vez, resto aparece 2x"""
+    result = 0
+    for num in arr:
+        result ^= num  # XOR: a ^ a = 0, a ^ 0 = a
+    return result
+
+# Uso: [1, 1, 2, 2, 3] → 3
+# Explicação: 1^1^2^2^3 = 0^0^3 = 3</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Contagem de Bits (Hamming Weight)</h3>
+                                <pre><code class="language-python">def count_set_bits(n):
+    """Conta número de bits 1 em n"""
+    count = 0
+    while n:
+        count += n & 1
+        n >>= 1
+    return count
+
+def count_set_bits_builtin(n):
+    """Usando função built-in"""
+    return bin(n).count('1')
+
+# Uso: Verificar paridade, checksums
+print(count_set_bits(7))  # 7 = 111 → 3 bits</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Power of Two Check</h3>
+                                <pre><code class="language-python">def is_power_of_two(n):
+    """Verifica se n é potência de 2"""
+    return n > 0 and (n & (n - 1)) == 0
+
+# Explicação: Potência de 2 tem apenas 1 bit setado
+# 8 = 1000, 7 = 0111, 8 & 7 = 0000
+
+def next_power_of_two(n):
+    """Próxima potência de 2 >= n"""
+    if n & (n - 1) == 0:
+        return n
+    power = 1
+    while power < n:
+        power <<= 1
+    return power</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- DATA ENGINEERING PATTERNS -->
+                    <section id="de-patterns" class="bg-slate-800 rounded-lg border border-slate-700 p-6 animate-slide-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🔧</span>
+                            <h2 class="text-2xl font-bold text-white">Data Engineering Patterns</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-bold text-white mb-2">MapReduce Pattern (Spark)</h3>
+                                <pre><code class="language-python"># Pseudocódigo Spark
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("WordCount").getOrCreate()
+
+# MAP: Emitir (palavra, 1) para cada palavra
+rdd = spark.sparkContext.textFile("data.txt") \
+    .flatMap(lambda line: line.split()) \
+    .map(lambda word: (word, 1))
+
+# SHUFFLE & SORT: Agrupa por chave (automático)
+# REDUCE: Soma contagens por palavra
+result = rdd.reduceByKey(lambda a, b: a + b)
+
+result.saveAsTextFile("output")</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Bloom Filter (Membership Testing)</h3>
+                                <pre><code class="language-python">class BloomFilter:
+    def __init__(self, size, num_hashes):
+        self.size = size
+        self.num_hashes = num_hashes
+        self.bits = [False] * size
+    
+    def add(self, item):
+        for i in range(self.num_hashes):
+            hash_val = hash((item, i)) % self.size
+            self.bits[hash_val] = True
+    
+    def contains(self, item):
+        """Pode ter false positives, mas não false negatives"""
+        for i in range(self.num_hashes):
+            hash_val = hash((item, i)) % self.size
+            if not self.bits[hash_val]:
+                return False
+        return True
+
+# Uso: Verificar se chave existe em dataset grande
+# Economia: O(1) espaço vs O(n) para set</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Reservoir Sampling (Amostragem Aleatória)</h3>
+                                <pre><code class="language-python">import random
+
+def reservoir_sample(stream, k):
+    """Amostra k elementos de stream infinito - O(k) espaço"""
+    reservoir = []
+    
+    for i, item in enumerate(stream):
+        if i < k:
+            reservoir.append(item)
+        else:
+            # Probabilidade 1/(i+1) de substituir elemento
+            j = random.randint(0, i)
+            if j < k:
+                reservoir[j] = item
+    
+    return reservoir
+
+# Uso: Amostragem de logs em tempo real, A/B testing</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">HyperLogLog (Contagem Aproximada)</h3>
+                                <pre><code class="language-python"># Conceito: Estima cardinalidade com O(log log n) espaço
+# Implementação: Use bibliotecas como redis-py com HyperLogLog
+
+# Pseudocódigo
+class HyperLogLog:
+    def __init__(self, precision=14):
+        self.precision = precision
+        self.registers = [0] * (1 << precision)
+    
+    def add(self, item):
+        hash_val = hash(item)
+        j = hash_val & ((1 << self.precision) - 1)  # Primeiros bits
+        w = hash_val >> self.precision  # Resto dos bits
+        leading_zeros = self._count_leading_zeros(w)
+        self.registers[j] = max(self.registers[j], leading_zeros)
+    
+    def cardinality(self):
+        """Estima número de elementos únicos"""
+        raw_estimate = (2 ** self.precision) ** 2 / sum(2 ** (-x) for x in self.registers)
+        return int(raw_estimate)
+
+# Uso: Contar usuários únicos em bilhões de eventos</code></pre>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-white mb-2">Consistent Hashing (Sharding)</h3>
+                                <pre><code class="language-python">import hashlib
+from bisect import bisect_right
+
+class ConsistentHash:
+    def __init__(self, nodes=None, replicas=3):
+        self.replicas = replicas
+        self.ring = {}
+        self.sorted_keys = []
+        if nodes:
+            for node in nodes:
+                self.add_node(node)
+    
+    def _hash(self, key):
+        return int(hashlib.md5(str(key).encode()).hexdigest(), 16)
+    
+    def add_node(self, node):
+        for i in range(self.replicas):
+            virtual_key = f"{node}:{i}"
+            hash_val = self._hash(virtual_key)
+            self.ring[hash_val] = node
+            self.sorted_keys.append(hash_val)
+        self.sorted_keys.sort()
+    
+    def get_node(self, key):
+        """Encontra nó responsável por chave"""
+        if not self.ring:
+            return None
+        hash_val = self._hash(key)
+        idx = bisect_right(self.sorted_keys, hash_val)
+        return self.ring[self.sorted_keys[idx % len(self.sorted_keys)]]
+
+# Uso: Distribuir dados entre múltiplos shards
+ch = ConsistentHash(['shard-1', 'shard-2', 'shard-3'])
+print(ch.get_node('user-123'))  # Sempre retorna mesmo shard</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- FOOTER -->
+                    <section class="bg-slate-800 rounded-lg border border-slate-700 p-6 mt-8">
+                        <h3 class="text-lg font-bold text-white mb-4">💡 Pro Tips para Entrevistas</h3>
+                        <ul class="text-sm text-gray-300 space-y-2">
+                            <li>✓ <strong>Scale First:</strong> "Este O(n) funciona em memória, mas para TBs usaria Spark/MapReduce com estratégia X"</li>
+                            <li>✓ <strong>Trade-offs:</strong> Sempre mencione espaço vs tempo, latência vs throughput</li>
+                            <li>✓ <strong>Implementação:</strong> Código limpo > código perfeito; explique decisões</li>
+                            <li>✓ <strong>Contexto:</strong> Relacione algoritmo a problemas reais (pipelines, cache, sharding)</li>
+                            <li>✓ <strong>Otimizações:</strong> Path compression, union by rank, memoização, early termination</li>
+                        </ul>
+                    </section>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script>
+        // Smooth scroll para links do TOC
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Highlight de seção ativa no TOC
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.toc-sticky a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('text-blue-400');
+                if (link.getAttribute('href').slice(1) === current) {
+                    link.classList.add('text-blue-400', 'font-bold');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
