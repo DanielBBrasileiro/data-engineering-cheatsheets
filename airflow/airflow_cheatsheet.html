@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Airflow Cheat Sheet - Versão para Impressão</title>
+    <style>
+        :root {
+            --primary: #017cee;
+            --bg-header: #f2f2f2;
+            --border: #ddd;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.2;
+            margin: 10mm;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        section {
+            border: 1px solid var(--border);
+            padding: 5px;
+            break-inside: avoid;
+        }
+        h2 {
+            background: var(--bg-header);
+            margin: -5px -5px 5px -5px;
+            padding: 3px 5px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            color: #d32f2f; /* Cor avermelhada similar ao PDF */
+        }
+        .cmd-group {
+            margin-bottom: 6px;
+        }
+        .desc {
+            font-weight: bold;
+            display: block;
+            color: #555;
+        }
+        code {
+            display: block;
+            background: #f9f9f9;
+            padding: 2px;
+            margin: 2px 0;
+            border-left: 2px solid var(--primary);
+            font-family: "Courier New", Courier, monospace;
+            font-size: 9px;
+            word-break: break-all;
+        }
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        .config-table td {
+            border: 1px solid #eee;
+            padding: 2px;
+            vertical-align: top;
+        }
+        @media print {
+            body { margin: 5mm; }
+            .container { grid-template-columns: repeat(3, 1fr); }
+            button { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Apache Airflow Cheat Sheet (Básico + Intermediário)</h1>
+
+    <div class="container">
+        
+        <!-- COLUNA 1: DAGS E PIPELINES -->
+        <div class="column">
+            <section>
+                <h2>Gerenciar DAGs</h2>
+                <div class="cmd-group">
+                    <span class="desc">Executar subseções por data</span>
+                    <code>airflow dags backfill</code>
+                    <span class="desc">Excluir registros da DAG</span>
+                    <code>airflow dags delete</code>
+                    <span class="desc">Listar todas as DAGs</span>
+                    <code>airflow dags list</code>
+                    <span class="desc">Listar jobs / execuções</span>
+                    <code>airflow dags list-jobs | list-runs</code>
+                    <span class="desc">Próxima execução</span>
+                    <code>airflow dags next-execution</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Manipular Pipelines</h2>
+                <div class="cmd-group">
+                    <span class="desc">Pausar / Retomar DAG</span>
+                    <code>airflow dags pause | unpause</code>
+                    <span class="desc">Relatório de carregamento</span>
+                    <code>airflow dags report</code>
+                    <span class="desc">Exibir tarefas e dependências</span>
+                    <code>airflow dags show</code>
+                    <span class="desc">Status de um run</span>
+                    <code>airflow dags state</code>
+                    <span class="desc">Testar um único DagRun</span>
+                    <code>airflow dags test</code>
+                    <span class="desc">Acionar execução manualmente</span>
+                    <code>airflow dags trigger</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Interagindo com DAGs/Tasks</h2>
+                <div class="cmd-group">
+                    <span class="desc">Listar tasks de uma DAG</span>
+                    <code>airflow tasks list [dag_id]</code>
+                    <span class="desc">Ver DAG no terminal / Salvar PNG</span>
+                    <code>airflow dags show [dag_id] [--save file.png]</code>
+                    <span class="desc">Rodar task para data específica</span>
+                    <code>airflow tasks run [dag_id] [task_id] [data]</code>
+                    <span class="desc">Limpar execução (Re-executar)</span>
+                    <code>airflow tasks clear [dag_id] -s [ini] -e [fim]</code>
+                </div>
+            </section>
+        </div>
+
+        <!-- COLUNA 2: CONFIG, DB E INFRA -->
+        <div class="column">
+            <section>
+                <h2>Configuração (Unix vs Docker)</h2>
+                <table class="config-table">
+                    <tr>
+                        <th>Alvo</th>
+                        <th>Unix (sed -i)</th>
+                        <th>Docker (export)</th>
+                    </tr>
+                    <tr>
+                        <td>Cor Barra</td>
+                        <td><code>navbar_color = #000</code></td>
+                        <td><code>AIRFLOW__WEBSERVER__NAVBAR_COLOR</code></td>
+                    </tr>
+                    <tr>
+                        <td>Exemplos</td>
+                        <td><code>load_examples = False</code></td>
+                        <td><code>AIRFLOW__CORE__LOAD_EXAMPLES</code></td>
+                    </tr>
+                    <tr>
+                        <td>Executor</td>
+                        <td><code>executor = Celery...</code></td>
+                        <td><code>AIRFLOW__CORE__EXECUTOR</code></td>
+                    </tr>
+                </table>
+            </section>
+
+            <section>
+                <h2>Operações de Banco de Dados</h2>
+                <div class="cmd-group">
+                    <span class="desc">Checar conexão / Inicializar</span>
+                    <code>airflow db check | airflow db init</code>
+                    <span class="desc">Migrações / Reset total</span>
+                    <code>airflow db check-migrations | reset</code>
+                    <span class="desc">Shell do banco / Upgrade</span>
+                    <code>airflow db shell | upgrade</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Serviços e Geral</h2>
+                <div class="cmd-group">
+                    <span class="desc">Webserver (Porta 8080)</span>
+                    <code>airflow webserver -D --port 8080</code>
+                    <span class="desc">Scheduler / Worker</span>
+                    <code>airflow scheduler -D | airflow worker -D</code>
+                    <span class="desc">Info / Versão / Plugins</span>
+                    <code>airflow info | version | plugins</code>
+                    <span class="desc">Arquivo de configuração</span>
+                    <code>airflow.cfg</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Usuários e Perfis</h2>
+                <div class="cmd-group">
+                    <span class="desc">Criar Usuário (Admin)</span>
+                    <code>airflow users create -u [user] -f [nome] -l [sobrenome] -r Admin -e [email]</code>
+                    <span class="desc">Listar / Excluir</span>
+                    <code>airflow users list | delete</code>
+                    <span class="desc">Importar / Exportar</span>
+                    <code>airflow users import | export</code>
+                    <span class="desc">Gerenciar Roles (Perfis)</span>
+                    <code>airflow roles list | create</code>
+                </div>
+            </section>
+        </div>
+
+        <!-- COLUNA 3: EXECUTORES, TAREFAS E VARIÁVEIS -->
+        <div class="column">
+            <section>
+                <h2>Gerenciar Tarefas (Intermediário)</h2>
+                <div class="cmd-group">
+                    <span class="desc">Limpar instâncias</span>
+                    <code>airflow tasks clear</code>
+                    <span class="desc">Dependências não atendidas</span>
+                    <code>airflow tasks failed-deps</code>
+                    <span class="desc">Renderizar template (Jinja)</span>
+                    <code>airflow tasks render</code>
+                    <span class="desc">Status da instância</span>
+                    <code>airflow tasks state</code>
+                    <span class="desc">Status de todas as tasks do run</span>
+                    <code>airflow tasks states-for-dag-run</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Conexões e Pools</h2>
+                <div class="cmd-group">
+                    <span class="desc">Conexões: Listar / Add / Export</span>
+                    <code>airflow connections list | add | export</code>
+                    <span class="desc">Pools: Listar / Set / Delete</span>
+                    <code>airflow pools list | set | delete</code>
+                    <span class="desc">Variáveis: Get / Set / Import</span>
+                    <code>airflow variables get | set | import</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Kubernetes & Celery</h2>
+                <div class="cmd-group">
+                    <span class="desc">K8s: Limpar pods / Gerar YAML</span>
+                    <code>airflow kubernetes cleanup-pods | generate-dag-yaml</code>
+                    <span class="desc">Celery: Flower / Stop / Worker</span>
+                    <code>airflow celery flower | stop | worker</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Diversos</h2>
+                <div class="cmd-group">
+                    <span class="desc">Renovar Kerberos</span>
+                    <code>airflow kerberos</code>
+                    <span class="desc">Trocar Chave Fernet</span>
+                    <code>airflow rotate-fernet-key</code>
+                    <span class="desc">Sincronizar Permissões</span>
+                    <code>airflow sync-perm</code>
+                    <span class="desc">Exibir este Cheat Sheet</span>
+                    <code>airflow cheat-sheet</code>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <div style="text-align: center; margin-top: 10px; font-size: 8px; color: #888;">
+        Resumo Airflow - Organizado para consulta rápida e impressão.
+    </div>
+
+</body>
+</html>
