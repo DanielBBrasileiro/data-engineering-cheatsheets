@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>PySpark Cheat Sheet - Impressão Otimizada</title>
+    <style>
+        :root {
+            --spark-orange: #e25a1c;
+            --bg-gray: #f8f9fa;
+            --border: #ccc;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            line-height: 1.15;
+            margin: 5mm;
+            color: #222;
+        }
+        h1 {
+            text-align: center;
+            font-size: 16px;
+            margin: 0 0 10px 0;
+            color: white;
+            background: var(--spark-orange);
+            padding: 5px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        section {
+            border: 1px solid var(--border);
+            margin-bottom: 5px;
+            break-inside: avoid;
+        }
+        h2 {
+            background: #333;
+            color: #fff;
+            margin: 0;
+            padding: 3px 5px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .block { padding: 4px; }
+        .label { font-weight: bold; color: #d32f2f; display: block; margin-top: 3px; }
+        code {
+            display: block;
+            background: var(--bg-gray);
+            padding: 2px;
+            font-family: "Consolas", monospace;
+            border-left: 2px solid var(--spark-orange);
+            margin: 1px 0;
+            white-space: pre-wrap;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 2px; }
+        th, td { border: 1px solid #ddd; padding: 2px; text-align: left; }
+        th { background: #eee; }
+
+        @media print {
+            body { margin: 0; }
+            .container { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>PySpark Cheat Sheet - Resumo Técnico</h1>
+
+    <div class="container">
+        
+        <!-- COLUNA 1: SETUP E CARGA -->
+        <div class="column">
+            <section>
+                <h2>Configuração e Sessão</h2>
+                <div class="block">
+                    <code>from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("Exemplo") \
+      .config("spark.some.config", "val").getOrCreate()</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Carregamento de Dados (I/O)</h2>
+                <div class="block">
+                    <span class="label">De RDD para DF:</span>
+                    <code>df = spark.createDataFrame([('1','Joe')], ['id','nome'])</code>
+                    <span class="label">CSV:</span>
+                    <code>df = spark.read.csv('data.csv', header=True, inferSchema=True)</code>
+                    <span class="label">JSON:</span>
+                    <code>df = spark.read.json('data.json')</code>
+                    <span class="label">Banco de Dados (JDBC):</span>
+                    <code>df = spark.read.jdbc(url, table, properties=props)</code>
+                    <span class="label">HDFS (Texto):</span>
+                    <code>sc.textFile("hdfs://path/to/file.txt")</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Auditoria e Exploração</h2>
+                <div class="block">
+                    <span class="label">Esquema e Estatísticas:</span>
+                    <code>df.printSchema()
+df.describe().show()
+df.count()</code>
+                    <span class="label">Contar valores nulos por coluna:</span>
+                    <code>from pyspark.sql.functions import count
+df.agg(*[count(c).alias(c) for c in df.columns]).show()</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Tratamento de Nulos (NA)</h2>
+                <div class="block">
+                    <code>df.na.fill(value) # Preenche nulos
+df.na.drop()     # Remove linhas com nulos</code>
+                </div>
+            </section>
+        </div>
+
+        <!-- COLUNA 2: WRANGLING E TRANSFORMAÇÕES -->
+        <div class="column">
+            <section>
+                <h2>Manipulação de Colunas</h2>
+                <div class="block">
+                    <span class="label">Seleção e Criação:</span>
+                    <code>df.select("col1", "col2")
+df.withColumn("nova", df.col * 2)
+df.withColumnRenamed("antigo", "novo")</code>
+                    <span class="label">UDF (User Defined Function):</span>
+                    <code>from pyspark.sql.functions import udf
+from pyspark.sql.types import DoubleType
+fn = udf(lambda x: complex_logic(x), DoubleType())
+df.withColumn("udf_col", fn(df.col))</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Joins (Junções)</h2>
+                <div class="block">
+                    <span class="label">Sintaxe:</span>
+                    <code>df1.join(df2, df1.id == df2.id, how='inner')</code>
+                    <span class="label">Tipos de 'how':</span>
+                    <code>'left', 'right', 'outer', 'full', 'left_semi', 'left_anti'</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Operações de Conjunto</h2>
+                <div class="block">
+                    <code>df1.union(df2)          # Une DFs (mesmo schema)
+df1.intersect(df2)      # Interseção
+df1.subtract(df2)       # Diferença
+df1.dropDuplicates()    # Distinct</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Reshaping (Pivot e Explode)</h2>
+                <div class="block">
+                    <span class="label">Pivot:</span>
+                    <code>df.groupBy("id").pivot("ano").sum("vendas")</code>
+                    <span class="label">Split Array para Colunas:</span>
+                    <code>df.select(df.arr[0], df.arr[1])</code>
+                    <span class="label">Explode (Linhas):</span>
+                    <code>from pyspark.sql.functions import explode
+df.select("id", explode("meu_array"))</code>
+                </div>
+            </section>
+        </div>
+
+        <!-- COLUNA 3: AGGREGAÇÃO, WINDOWS E ML -->
+        <div class="column">
+            <section>
+                <h2>Agrupamento e Sumarização</h2>
+                <div class="block">
+                    <code>from pyspark.sql import functions as F
+df.groupBy("cat").agg(
+    F.min("val").alias("min"),
+    F.avg("val").alias("media"),
+    F.collect_list("col").alias("lista")
+)</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Window Functions (Janelas)</h2>
+                <div class="block">
+                    <code>from pyspark.sql.window import Window
+w = Window.partitionBy("dep").orderBy("salario")
+
+# Ranking e Diferença
+df.withColumn("rank", F.rank().over(w))
+df.withColumn("diff", df.val - F.lag("val").over(w))</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>ML Pipeline (Resumo)</h2>
+                <div class="block">
+                    <span class="label">Feature Indexing:</span>
+                    <code>from pyspark.ml.feature import VectorIndexer, StringIndexer
+indexer = StringIndexer(inputCol="label", outputCol="idxLabel")</code>
+                    <span class="label">Split Treino/Teste:</span>
+                    <code>train, test = df.randomSplit([0.7, 0.3])</code>
+                    <span class="label">Pipeline:</span>
+                    <code>from pyspark.ml import Pipeline
+pipeline = Pipeline(stages=[indexer, lr])
+model = pipeline.fit(train)
+pred = model.transform(test)</code>
+                    <span class="label">Avaliação:</span>
+                    <code>from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+ev = MulticlassClassificationEvaluator(metricName="accuracy")
+acc = ev.evaluate(pred)</code>
+                </div>
+            </section>
+
+            <section>
+                <h2>Filtros e Amostragem</h2>
+                <div class="block">
+                    <code>df.filter(df.idade > 21)
+df.where("col_string = 'valor'")
+df.sample(withReplacement=False, fraction=0.1)</code>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <div style="text-align: center; margin-top: 10px; font-size: 8px; color: #666;">
+        Resumo PySpark baseado no material de Dr. Wenqiang Feng | Editado para densidade máxima.
+    </div>
+
+</body>
+</html>
