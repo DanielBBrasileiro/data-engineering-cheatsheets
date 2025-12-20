@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pandas Cheatsheet for Data Engineers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Otimizações de Impressão A4 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        /* Blocos de código compactos */
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+        .token.keyword { color: #c678dd; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-blue-900 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Pandas <span class="text-blue-900">Data Engineer</span> Edition</h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">ETL • Chunking • Cleaning • Vectorization • Parquet</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-blue-100 text-blue-900 px-2 py-1 rounded">v1.4+</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">No Plotting</span>
+                <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded">Performance</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: VECTORIZATION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">A Regra de Ouro (Performance)</h2>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div class="bg-red-50 p-2 rounded border border-red-100">
+                        <strong class="text-red-900">❌ Evite Loops (Iterrows)</strong>
+                        <p class="mt-1">Iterar linhas com <code>for row in df.iterrows()</code> é extremamente lento em Python puro.</p>
+                    </div>
+                    <div class="bg-green-50 p-2 rounded border border-green-100">
+                        <strong class="text-green-900">✅ Use Vetorização</strong>
+                        <p class="mt-1">Use colunas inteiras em operações. O Pandas delega para C/Cython. Ex: <code>df['a'] * df['b']</code>.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Imports Padrão</h2>
+                <pre><code class="language-python">import pandas as pd
+import numpy as np
+
+# Configuração útil para DEs (ver strings inteiras)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_colwidth', None)</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Ingestão e Saída (I/O) -->
+            <div class="space-y-6">
+                
+                <!-- LEITURA EFICIENTE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. I/O & Chunking</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Big Files</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Ler arquivos maiores que a RAM.</p>
+                        <pre><code class="language-python"># CSV em Chunks (Generator)
+chunks = pd.read_csv('big_file.csv', chunksize=10000)
+
+for chunk in chunks:
+    process(chunk) # Processa 10k linhas por vez
+
+# Parquet (Padrão Ouro para DE)
+# engine='pyarrow' é mais rápido e multithread
+df = pd.read_parquet('data.parquet', columns=['id', 'val'])
+
+# SQL (Append/Replace)
+df.to_sql('table', con=engine, if_exists='append', index=False)</code></pre>
+                    </div>
+                </section>
+
+                <!-- INSPEÇÃO TÉCNICA -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Inspeção & Memória</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Profiling</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python"># Uso real de memória (incluindo strings)
+df.info(memory_usage='deep')
+
+# Estatísticas (ignora nulos por padrão)
+df.describe()
+
+# Verificar nulos por coluna
+df.isna().sum()
+
+# Checar duplicatas (baseado em chaves)
+df.duplicated(subset=['id', 'date']).sum()</code></pre>
+                    </div>
+                </section>
+
+                <!-- TIPAGEM E CASTING -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-blue-900">
+                    <div class="bg-blue-900 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Limpeza & Tipagem</h2>
+                        <span class="text-xs bg-blue-700 px-2 rounded">Schema</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Ajustar tipos economiza até 90% de RAM.</p>
+                        <pre><code class="language-python"># Converter tipos (Casting)
+df['id'] = df['id'].astype('int32') # Menor que int64
+df['cost'] = df['cost'].astype('float32')
+
+# Strings de baixa cardinalidade -> Category
+# Ex: Status, Países, Gênero (Economia massiva de RAM)
+df['status'] = df['status'].astype('category')
+
+# Tratamento de Nulos
+df['col'] = df['col'].fillna(0)
+df.dropna(subset=['id'], inplace=True)
+
+# Renomear Colunas (Padrão Snake Case)
+df = df.rename(columns={'Nome Cliente': 'nome_cliente'})</code></pre>
+                    </div>
+                </section>
+
+                <!-- DATETIME -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. DateTime (Séries Temporais)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Time</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python"># Converter string para data (Coerce ignora erros)
+df['dt'] = pd.to_datetime(df['raw_date'], errors='coerce')
+
+# Acessar propriedades (ano, mês, dia da semana)
+df['year'] = df['dt'].dt.year
+df['month'] = df['dt'].dt.month
+
+# Filtrar por data
+mask = df['dt'] >= '2023-01-01'
+df_2023 = df.loc[mask]</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Transformação e Performance -->
+            <div class="space-y-6">
+
+                <!-- SQL STYLE OPERATIONS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Joins & Aggregations</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">SQL-like</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        
+                        <div>
+                            <h3 class="font-bold text-sm">Merge (JOIN)</h3>
+                            <pre><code class="language-python"># Left Join
+df_merged = pd.merge(
+    orders, customers, 
+    on='customer_id', 
+    how='left',
+    suffixes=('_ord', '_cust')
+)</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm">GroupBy & Agg</h3>
+                            <pre><code class="language-python"># Agregação Múltipla
+res = df.groupby('department').agg({
+    'salary': ['sum', 'mean'],
+    'id': 'count'
+}).reset_index() # Achatar índice hierárquico depois</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- STRINGS E LISTAS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Strings & Arrays</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Text/JSON</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Acesso vetorial a strings usa o acessor <code>.str</code>.</p>
+                        <pre><code class="language-python"># Limpeza Vetorizada
+df['email'] = df['email'].str.lower().str.strip()
+
+# Regex Extraction
+# Cria colunas novas baseadas em grupos de captura
+df[['user', 'domain']] = df['email'].str.extract(r'^(\w+)@(\w+)')
+
+# Explode (Unnest Array/List) - Vital para JSON
+# De: [1, [a, b]] -> Para: 2 linhas (1, a), (1, b)
+df_flat = df.explode('items_list')</code></pre>
+                    </div>
+                </section>
+
+                <!-- FILTROS AVANÇADOS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Seleção & Query</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Filtering</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python"># loc: Seleção por Label [linhas, colunas]
+df.loc[df['age'] > 18, ['name', 'email']]
+
+# isin (SQL IN)
+target_ids = [1, 2, 5, 10]
+df_filtered = df[df['id'].isin(target_ids)]
+
+# Query (Sintaxe limpa)
+# Usa variáveis do ambiente com @
+min_val = 100
+df.query("status == 'active' and cost > @min_val")</code></pre>
+                    </div>
+                </section>
+
+                <!-- PIVOT & MELT -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">8. Reshaping (Melt/Pivot)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Normalization</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Normalização de dados "Wide" para "Long".</p>
+                        <pre><code class="language-python"># Melt (Unpivot) - Wide para Long
+# Transforma colunas de meses (jan, fev...) em linhas
+df_long = df.melt(
+    id_vars=['product_id'],
+    var_name='month',
+    value_name='sales'
+)
+
+# Pivot - Long para Wide
+df_wide = df_long.pivot(
+    index='product_id',
+    columns='month',
+    values='sales'
+)</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Se o DataFrame ficar lento, verifique a memória com <code>df.info()</code>. Se os tipos estiverem como <code>object</code> (strings), converta para <code>category</code> ou use o backend <code>PyArrow</code> (disponível nas versões modernas do Pandas).</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>

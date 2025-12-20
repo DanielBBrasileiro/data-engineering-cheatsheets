@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python OS & Paths Cheatsheet for Data Engineers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-emerald-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-emerald-600">os & os.path</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Path Manipulation • File Discovery • Env Vars • Performance I/O</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded">FileSystem</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Discovery</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">Cross-Platform</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: PATH ANATOMY -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">Anatomia de um Path</h2>
+                <div class="bg-gray-800 p-4 rounded-lg text-center overflow-x-auto whitespace-nowrap font-mono text-sm text-white">
+                    <span class="text-gray-400">/data/lake/</span><span class="text-emerald-400">raw</span><span class="text-white">/</span><span class="text-yellow-400">sales_2023</span><span class="text-pink-400">.parquet</span>
+                </div>
+                <div class="flex justify-between text-[10px] text-gray-500 mt-2 px-2 font-bold font-mono">
+                    <span class="w-1/3 text-left">dirname</span>
+                    <span class="w-1/3 text-center">basename (stem)</span>
+                    <span class="w-1/3 text-right">ext</span>
+                </div>
+                <p class="text-xs text-center mt-3 text-gray-600">Manipular strings de caminho manualmente é erro na certa (Windows vs Linux). Use <code>os.path</code>.</p>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Padrão Ouro (Cross-Platform)</h2>
+                <pre><code class="language-python">import os
+
+# Nunca use strings literais com barras '/' ou '\'
+# O join resolve o separador do SO automaticamente
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "raw")</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Paths & Config -->
+            <div class="space-y-6">
+                
+                <!-- PATH MANIPULATION -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Manipulação de Caminhos</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">os.path</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Essencial para construir pipelines que rodam localmente e no servidor.</p>
+                        <pre><code class="language-python">p = "/home/user/data/file.csv"
+
+# Extração
+base = os.path.basename(p) # "file.csv"
+dirn = os.path.dirname(p)  # "/home/user/data"
+name, ext = os.path.splitext(base) # ("file", ".csv")
+
+# Verificação
+if os.path.exists(p) and os.path.isfile(p):
+    print("Arquivo válido")
+
+# Normalização (Remove .. e resolve barras)
+clean = os.path.normpath("/usr/bin/../lib") # "/usr/lib"</code></pre>
+                    </div>
+                </section>
+
+                <!-- ENVIRONMENT VARIABLES -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-emerald-400">
+                    <div class="bg-emerald-600 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Variáveis de Ambiente</h2>
+                        <span class="text-xs bg-emerald-700 px-2 rounded">Config</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Vital para Docker, Kubernetes e Airflow (Secrets).</p>
+                        <pre><code class="language-python"># Ler (Retorna None se não existir, seguro)
+db_host = os.environ.get("DB_HOST", "localhost")
+
+# Ler (Força erro se não existir - Fail Fast)
+try:
+    api_key = os.environ["API_KEY"]
+except KeyError:
+    raise Exception("API_KEY is missing!")
+
+# Expansão de caminhos (Shell-like)
+# Útil para configs: path: "$HOME/projects"
+path = os.path.expandvars("$HOME/data") 
+# path = "/home/usuario/data"</code></pre>
+                    </div>
+                </section>
+
+                <!-- DIRECTORIES -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Gestão de Diretórios</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Setup</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python">out_dir = "output/daily/2023-10-01"
+
+# Criar recursivamente (mkdir -p)
+# exist_ok=True evita erro se já existir
+os.makedirs(out_dir, exist_ok=True)
+
+# Mover/Renomear (Atômico no mesmo filesystem)
+os.rename("temp.csv", os.path.join(out_dir, "final.csv"))
+
+# Remover (Cuidado!)
+os.remove("file.txt") # Apenas arquivos
+os.rmdir("empty_dir") # Apenas pastas vazias</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Discovery & Performance -->
+            <div class="space-y-6">
+
+                <!-- FINDING FILES (TRAVERSAL) -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Achar Arquivos (Discovery)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Traversal</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div class="border p-2 rounded bg-red-50 text-red-900 border-red-200">
+                                <strong>os.walk()</strong><br>Lento. Carrega tudo. Clássico.
+                            </div>
+                            <div class="border p-2 rounded bg-green-50 text-green-900 border-green-200">
+                                <strong>os.scandir()</strong><br>Rápido. Iterator. Cacheia stats.
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-gray-600 mb-1"><strong>Método Moderno (Recomendado):</strong></p>
+                        <pre><code class="language-python"># Listar arquivos em um diretório (Não recursivo)
+with os.scandir("data/raw") as entries:
+    for entry in entries:
+        if entry.is_file() and entry.name.endswith(".parquet"):
+            print(f"Achado: {entry.path}")
+            # entry.stat().st_size (Já em cache!)</code></pre>
+
+                        <p class="text-xs text-gray-600 mb-1 mt-2"><strong>Método Recursivo (Crawler):</strong></p>
+                        <pre><code class="language-python"># Percorre árvore inteira
+for root, dirs, files in os.walk("data"):
+    # dirs.remove('.git') # Poda a árvore (otimização)
+    for file in files:
+        if "checkpoint" in file:
+            print(os.path.join(root, file))</code></pre>
+                    </div>
+                </section>
+
+                <!-- PATH EXPANSION -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Caminhos Dinâmicos</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">User</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Lidar com <code>~</code> (home) e caminhos relativos.</p>
+                        <pre><code class="language-python"># Expandir Til (~)
+user_path = os.path.expanduser("~/downloads/data.zip")
+# Linux: /home/usuario/downloads/data.zip
+
+# Caminho Absoluto (Resolver . e ..)
+abs_path = os.path.abspath("./data/../configs")
+# /app/configs
+
+# Diretório de Trabalho (CWD)
+cwd = os.getcwd()
+os.chdir("/tmp") # Mudar diretório (Evite se puder)</code></pre>
+                    </div>
+                </section>
+
+                <!-- PERFORMANCE HACKS -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-yellow-400">
+                    <div class="bg-yellow-600 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Performance I/O (Zero-Copy)</h2>
+                        <span class="text-xs bg-yellow-700 px-2 rounded">Low-Level</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Para copiar arquivos gigantes (>10GB) sem travar a CPU/RAM do Python. O Kernel faz o trabalho direto.</p>
+                        <pre><code class="language-python"># Copiar arquivo Eficiente
+src = os.open("input_big.dat", os.O_RDONLY)
+dst = os.open("output_copy.dat", os.O_WRONLY | os.O_CREAT)
+
+try:
+    # sendfile(out, in, offset, count)
+    # count=0 envia tudo em algumas plataformas
+    os.sendfile(dst, src, 0, os.path.getsize("input_big.dat"))
+finally:
+    os.close(src); os.close(dst)</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Para novas implementações (Python 3.4+), considere usar <code>pathlib</code> para manipulação de caminhos (OOP), mas continue usando <code>os.scandir</code> e <code>os.environ</code> para performance e configuração.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
