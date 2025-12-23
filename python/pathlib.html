@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Pathlib for Data Engineers Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Diagram Styles */
+        .diagram-box {
+            border: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #475569;
+        }
+        .arrow-down {
+            width: 0; 
+            height: 0; 
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #94a3b8;
+            margin: 2px auto;
+        }
+        
+        /* Path anatomy illustration */
+        .path-part {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-pink-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-pink-600">Pathlib</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Object-Oriented Filesystem • Navigation • Globbing • I/O</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded">Python 3.4+</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">OOP</span>
+                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">Cross-Platform</span>
+            </div>
+        </header>
+
+        <!-- VISUAL DIAGRAMS SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Class Hierarchy Diagram (Recreated from Docs) -->
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Class Hierarchy</h2>
+                <div class="flex flex-col items-center w-full max-w-sm mx-auto">
+                    <!-- Pure Paths -->
+                    <div class="w-full flex justify-center gap-2">
+                        <div class="diagram-box bg-blue-50 border-blue-200 w-full">PurePath<br><span class="font-normal text-xs">(Logical ops only)</span></div>
+                    </div>
+                    
+                    <div class="flex w-full justify-center gap-16">
+                        <div class="arrow-down"></div>
+                        <div class="arrow-down"></div>
+                    </div>
+
+                    <div class="w-full flex justify-between gap-2">
+                        <div class="diagram-box bg-blue-50 border-blue-200 w-1/2">PurePosixPath<br><span class="font-normal text-xs">(Linux/Mac)</span></div>
+                        <div class="diagram-box bg-blue-50 border-blue-200 w-1/2">PureWindowsPath<br><span class="font-normal text-xs">(Windows)</span></div>
+                    </div>
+
+                    <div class="flex w-full justify-center gap-16 my-1 text-gray-300">
+                        <span>⬇ inherits</span>
+                        <span>⬇ inherits</span>
+                    </div>
+
+                    <!-- Concrete Paths -->
+                    <div class="w-full flex justify-between gap-2">
+                        <div class="diagram-box bg-pink-50 border-pink-200 w-1/2 text-pink-800">PosixPath<br><span class="font-normal text-xs">(Concrete I/O)</span></div>
+                        <div class="diagram-box bg-pink-50 border-pink-200 w-1/2 text-pink-800">WindowsPath<br><span class="font-normal text-xs">(Concrete I/O)</span></div>
+                    </div>
+
+                    <div class="flex w-full justify-center gap-16">
+                        <div class="arrow-down"></div>
+                        <div class="arrow-down"></div>
+                    </div>
+
+                    <div class="w-full flex justify-center">
+                        <div class="diagram-box bg-pink-100 border-pink-300 w-full text-pink-900 border-2 shadow-sm">Path<br><span class="font-normal text-xs">(Autodetects OS - Use This!)</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Path Anatomy Diagram -->
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Path Anatomy</h2>
+                <div class="bg-gray-800 p-4 rounded-lg text-center overflow-x-auto whitespace-nowrap">
+                    <div class="text-white font-mono text-sm mb-2">/home/data/engineering/pipeline.parquet.gzip</div>
+                    
+                    <div class="flex justify-center items-start space-x-1">
+                        <div class="flex flex-col items-center">
+                            <span class="h-2 w-px bg-gray-500 mb-1"></span>
+                            <span class="text-gray-400 text-xs">anchor</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center w-24">
+                            <span class="h-2 w-full border-b border-gray-500 mb-1"></span>
+                            <span class="text-green-400 text-xs font-bold">.parent</span>
+                        </div>
+                        
+                         <div class="flex flex-col items-center">
+                            <span class="h-2 w-full border-b border-blue-500 mb-1"></span>
+                            <span class="text-blue-300 text-xs font-bold">.name</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end items-start space-x-1 mt-4 mr-2">
+                         <div class="flex flex-col items-center mr-4">
+                            <span class="h-2 w-16 border-t border-yellow-500 mt-1"></span>
+                            <span class="text-yellow-400 text-xs">.stem</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="h-2 w-12 border-t border-purple-500 mt-1"></span>
+                            <span class="text-purple-400 text-xs">.suffixes</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 text-xs text-gray-600">
+                    <p><strong>.stem:</strong> <code>pipeline.parquet</code></p>
+                    <p><strong>.suffix:</strong> <code>.gzip</code> (last one)</p>
+                    <p><strong>.suffixes:</strong> <code>['.parquet', '.gzip']</code></p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Basics & Navigation -->
+            <div class="space-y-6">
+                
+                <!-- WHY PATHLIB -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Basic Navigation</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">No more os.path.join</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="bg-pink-50 p-2 rounded border-l-4 border-pink-500 text-xs mb-2">
+                            <strong>Operator Overloading:</strong> Use <code>/</code> to join paths intuitively.
+                        </div>
+
+                        <pre><code class="language-python">from pathlib import Path
+
+# Create a path (Autodetects OS)
+base = Path("/data/datalake")
+
+# Join paths using '/'
+raw_path = base / "raw" / "2023" / "sales.csv"
+
+print(raw_path) 
+# Linux: /data/datalake/raw/2023/sales.csv
+# Win:   \data\datalake\raw\2023\sales.csv</code></pre>
+                    </div>
+                </section>
+
+                <!-- FILE SYSTEM OPS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Filesystem Operations</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">CRUD</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        
+                        <div>
+                            <h3 class="font-bold text-sm">Check & Create</h3>
+                            <pre><code class="language-python">p = Path("output/daily/metrics")
+
+if not p.exists():
+    # parents=True -> mkdir -p (create intermediates)
+    # exist_ok=True -> don't crash if exists
+    p.mkdir(parents=True, exist_ok=True)</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm">Rename & Move</h3>
+                            <pre><code class="language-python">src = Path("temp.txt")
+dst = Path("archive/processed.txt")
+
+# Move/Rename
+src.rename(dst)
+
+# Delete
+src.unlink(missing_ok=True) # Python 3.8+
+dst.rmdir() # Only if empty</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- I/O SHORTCUTS -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-pink-100">
+                    <div class="bg-pink-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. I/O Shortcuts</h2>
+                        <span class="text-xs bg-pink-600 px-2 rounded">Quick Read/Write</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Stop using <code>with open(...)</code> for simple files.</p>
+                        
+                        <pre><code class="language-python">p = Path("config.json")
+
+# Write
+p.write_text('{"status": "ok"}', encoding='utf-8')
+
+# Read
+content = p.read_text(encoding='utf-8')
+print(content)
+
+# Bytes
+binary_data = p.read_bytes()</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Pattern Matching & OS.PATH migration -->
+            <div class="space-y-6">
+
+                <!-- GLOBBING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Globbing (Searching)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">ETL Source</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Returns generators (memory efficient).</p>
+                        
+                        <div>
+                            <h3 class="font-bold text-sm">Flat Search</h3>
+                            <pre><code class="language-python">folder = Path("data/landing")
+# Find all CSVs in THIS folder
+files = list(folder.glob("*.csv"))</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm">Recursive Search (Walk)</h3>
+                            <pre><code class="language-python"># Find all parquet files in SUBFOLDERS too
+# rglob is equivalent to glob("**/*.parquet")
+all_files = folder.rglob("*.parquet")
+
+for f in all_files:
+    print(f.name, f.parent)</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MIGRATION GUIDE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Migration Guide</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">os.path vs pathlib</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-gray-100 font-bold text-gray-700">
+                                <tr><th class="p-2">os.path (Old)</th><th class="p-2">pathlib (New)</th></tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr><td class="p-2 font-mono">os.path.join(a, b)</td><td class="p-2 font-mono font-bold text-pink-600">a / b</td></tr>
+                                <tr><td class="p-2 font-mono">os.path.exists(p)</td><td class="p-2 font-mono font-bold text-pink-600">p.exists()</td></tr>
+                                <tr><td class="p-2 font-mono">os.path.dirname(p)</td><td class="p-2 font-mono font-bold text-pink-600">p.parent</td></tr>
+                                <tr><td class="p-2 font-mono">os.path.basename(p)</td><td class="p-2 font-mono font-bold text-pink-600">p.name</td></tr>
+                                <tr><td class="p-2 font-mono">os.path.splitext(p)[0]</td><td class="p-2 font-mono font-bold text-pink-600">p.stem</td></tr>
+                                <tr><td class="p-2 font-mono">os.makedirs(p)</td><td class="p-2 font-mono font-bold text-pink-600">p.mkdir(parents=True)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- PRO TIPS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Advanced Tips</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Power User</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <ul class="text-xs space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>Relative Paths:</strong> Use <code>p.relative_to(base)</code> to strip common prefixes.</li>
+                            <li><strong>Resolve:</strong> Use <code>p.resolve()</code> to get the absolute path and resolve symlinks (like <code>readlink -f</code>).</li>
+                            <li><strong>Home:</strong> <code>Path.home()</code> gives you <code>~</code> (user directory).</li>
+                            <li><strong>Cwd:</strong> <code>Path.cwd()</code> gives current working directory.</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Most Data Science libraries (Pandas, PyArrow, Polars) accept <code>Path</code> objects directly. No need to convert <code>str(p)</code> anymore!</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
