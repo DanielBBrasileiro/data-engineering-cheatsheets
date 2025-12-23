@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLAlchemy Cheatsheet for Data Engineers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-red-700 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">SQLAlchemy <span class="text-red-700">2.0</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Core vs ORM • Connection Pooling • Reflection • Bulk Inserts</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-red-100 text-red-800 px-2 py-1 rounded">Universal</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Pythonic SQL</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">Enterprise</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: CORE VS ORM -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">Core vs ORM: Qual usar?</h2>
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-100 p-3 rounded border-l-4 border-slate-500">
+                        <strong class="text-slate-900 block mb-1">SQLAlchemy Core</strong>
+                        <p>SQL expression language. Próximo ao SQL puro. Rápido, explícito.</p>
+                        <div class="mt-2 font-bold text-green-700">✔ Pipelines de Dados (ETL)</div>
+                        <div class="font-bold text-green-700">✔ Bulk Inserts massivos</div>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded border-l-4 border-red-500">
+                        <strong class="text-red-900 block mb-1">SQLAlchemy ORM</strong>
+                        <p>High-level Object Relational Mapper. Mapeia classes para tabelas.</p>
+                        <div class="mt-2 font-bold text-blue-700">✔ Aplicações Web (APIs)</div>
+                        <div class="font-bold text-blue-700">✔ Lógica de Negócios Complexa</div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Engine Setup</h2>
+                <pre><code class="language-python">from sqlalchemy import create_engine
+
+# Connection String (URL)
+# dialect+driver://username:password@host:port/database
+url = "postgresql+psycopg2://user:pass@localhost/db"
+
+# Engine: O ponto de entrada (Lazy connection)
+engine = create_engine(url, echo=True, pool_size=5)</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Core & Reflection -->
+            <div class="space-y-6">
+                
+                <!-- CONNECTION & EXECUTION -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Core: Connection & Query</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Raw Power</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Use <code>text()</code> para SQL seguro (previne injection).</p>
+                        <pre><code class="language-python">from sqlalchemy import text
+
+# Context Manager (Auto-commit/Rollback)
+with engine.connect() as conn:
+    # Execução Segura com Parâmetros
+    result = conn.execute(
+        text("SELECT * FROM users WHERE id > :val"),
+        {"val": 100}
+    )
+    
+    # Iterar resultados (Tuplas)
+    for row in result:
+        print(row.name) # Acesso por nome da coluna</code></pre>
+                    </div>
+                </section>
+
+                <!-- REFLECTION -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-red-100">
+                    <div class="bg-red-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Reflection (Auto-Schema)</h2>
+                        <span class="text-xs bg-red-800 px-2 rounded">Legacy DBs</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Carrega a estrutura de tabelas existentes sem definir classes manualmente.</p>
+                        <pre><code class="language-python">from sqlalchemy import MetaData, Table
+
+metadata = MetaData()
+
+# Carrega schema do banco
+users_table = Table(
+    'users', 
+    metadata, 
+    autoload_with=engine
+)
+
+# Agora você pode usar em queries Pythonicas
+print(users_table.columns.keys())</code></pre>
+                    </div>
+                </section>
+
+                <!-- EXPRESSION LANGUAGE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. SQL Expression Language</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Query Builder</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Escrever SQL usando objetos Python (Agnóstico de Banco).</p>
+                        <pre><code class="language-python">from sqlalchemy import select, insert
+
+# SELECT * FROM users WHERE name = 'Alice'
+stmt = select(users_table).where(
+    users_table.c.name == 'Alice'
+)
+
+with engine.connect() as conn:
+    result = conn.execute(stmt)</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: ORM & Performance -->
+            <div class="space-y-6">
+
+                <!-- ORM DECLARATIVE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. ORM: Model Definition</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Domain</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python">from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+class Base(DeclarativeBase): pass
+
+class User(Base):
+    __tablename__ = "users"
+    
+    # Type Hints (Novo no 2.0)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    email: Mapped[str]
+
+# Criar tabelas
+Base.metadata.create_all(engine)</code></pre>
+                    </div>
+                </section>
+
+                <!-- SESSION MANAGEMENT -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Session (Unit of Work)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Transactions</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python">from sqlalchemy.orm import Session
+
+# Inserir Objetos
+with Session(engine) as session:
+    user = User(name="Bob", email="bob@mail.com")
+    session.add(user)
+    session.commit() # Persiste no DB
+
+# Consultar
+with Session(engine) as session:
+    # Retorna objetos User
+    user = session.query(User).filter_by(name="Bob").first()
+    
+    # Atualizar (Dirty checking automático)
+    user.email = "new_bob@mail.com"
+    session.commit()</code></pre>
+                    </div>
+                </section>
+
+                <!-- BULK OPERATIONS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Bulk Inserts (Performance)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Data Eng</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Evite <code>session.add()</code> em loops. Use Core para performance máxima.</p>
+                        <pre><code class="language-python">data = [
+    {"name": f"User_{i}", "email": f"u{i}@test.com"}
+    for i in range(10000)
+]
+
+with engine.begin() as conn:
+    # Executemany otimizado
+    conn.execute(
+        insert(users_table),
+        data
+    )</code></pre>
+                        <div class="bg-yellow-50 p-2 rounded text-xs border-l-4 border-yellow-500 mt-2">
+                            <strong>Dica:</strong> Para milhões de linhas, use <code>COPY</code> (Postgres) ou drivers específicos (<code>pandas.to_sql(method='multi')</code>).
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONNECTION POOLING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Connection Pooling</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Stability</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Essencial para evitar erros de "Too many connections" ou timeouts.</p>
+                        <pre><code class="language-python"># Configuração Típica de Produção
+engine = create_engine(
+    url,
+    pool_size=10,        # Conexões mantidas abertas
+    max_overflow=20,     # Extras temporárias permitidas
+    pool_timeout=30,     # Espera máxima por conexão
+    pool_recycle=1800    # Recicla conexão a cada 30min
+)</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Em projetos de Data Engineering puros (Airflow, Scripts), prefira o <strong>SQLAlchemy Core</strong>. Ele tem menos overhead de memória que o ORM e oferece controle total sobre as queries geradas.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+</body>
+</html>
