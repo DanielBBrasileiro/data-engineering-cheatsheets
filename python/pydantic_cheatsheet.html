@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pydantic Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-emerald-500 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Pydantic <span class="text-emerald-600">v2</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Data Validation • Settings Management • Serialization • Schema Generation</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Fast</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Type Safe</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">Rust Core</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: PARSING VS VALIDATION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">Parsing vs Validation</h2>
+                <div class="flex items-center justify-center gap-4 text-xs font-mono">
+                    <div class="bg-red-50 p-2 rounded border border-red-200 text-center">
+                        <span class="text-red-700 font-bold">Input JSON</span><br>
+                        <code>{"id": "123"}</code>
+                    </div>
+                    <div class="text-xl text-emerald-500">➜</div>
+                    <div class="bg-emerald-50 p-2 rounded border border-emerald-200 text-center">
+                        <span class="text-emerald-700 font-bold">Pydantic Model</span><br>
+                        <code>id: int = 123</code>
+                    </div>
+                </div>
+                <p class="text-xs text-center mt-2 text-gray-500">Pydantic <em>converte</em> os dados para o tipo correto (Parsing), não apenas checa.</p>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Basic Model</h2>
+                <pre><code class="language-python">from pydantic import BaseModel, Field, EmailStr
+
+class User(BaseModel):
+    id: int
+    name: str = "Anonymous" # Default
+    email: EmailStr # Requer 'pip install pydantic[email]'
+    tags: list[str] = []</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Models & Fields -->
+            <div class="space-y-6">
+                
+                <!-- VALIDATION & PARSING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Validation & Parsing</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Core</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Pydantic tenta coagir tipos. Se falhar, levanta <code>ValidationError</code>.</p>
+                        <pre><code class="language-python"># Sucesso (Coerção de string para int)
+user = User(id="123", email="jane@example.com")
+print(user.id) # 123 (int)
+
+# Falha (Validação)
+try:
+    User(id="abc", email="bad-email")
+except ValidationError as e:
+    print(e.json()) 
+    # Mostra erro detalhado: "value is not a valid integer"</code></pre>
+                    </div>
+                </section>
+
+                <!-- FIELD CONSTRAINTS -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-emerald-400">
+                    <div class="bg-emerald-600 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Field Constraints</h2>
+                        <span class="text-xs bg-emerald-700 px-2 rounded">Rules</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Use <code>Field</code> para adicionar metadados e restrições de validação.</p>
+                        <pre><code class="language-python">from pydantic import Field
+
+class Product(BaseModel):
+    name: str = Field(..., min_length=3, max_length=50)
+    # gt=0 -> greater than 0
+    price: float = Field(..., gt=0, description="Preço em USD")
+    # alias para input JSON (ex: camelCase)
+    sku: str = Field(..., alias="itemSku") 
+
+# Input: {"itemSku": "ABC-123", "name": "Box", "price": 10.5}</code></pre>
+                    </div>
+                </section>
+
+                <!-- CUSTOM VALIDATORS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Custom Validators</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Logic</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Use decoradores para lógica de negócios complexa.</p>
+                        <pre><code class="language-python">from pydantic import field_validator, model_validator
+
+class Order(BaseModel):
+    status: str
+    items: list[str]
+
+    @field_validator('status')
+    @classmethod
+    def check_status(cls, v: str) -> str:
+        if v not in ['PENDING', 'SHIPPED']:
+            raise ValueError('Status inválido')
+        return v.upper() # Pode modificar o valor
+
+    @model_validator(mode='after')
+    def check_items(self) -> 'Order':
+        if self.status == 'SHIPPED' and not self.items:
+            raise ValueError('Não pode enviar pedido vazio')
+        return self</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Settings & Advanced -->
+            <div class="space-y-6">
+
+                <!-- SETTINGS MANAGEMENT -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Settings (Env Vars)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Config</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Gerencie configurações lendo de <code>.env</code> automaticamente.</p>
+                        <div class="bg-yellow-50 p-2 rounded border border-yellow-200 text-xs mb-2">
+                            <strong>Req:</strong> <code>pip install pydantic-settings</code>
+                        </div>
+                        <pre><code class="language-python">from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # Lê variável de ambiente APP_NAME ou usa default
+    app_name: str = "My Data Pipeline"
+    # Lê DB_PASSWORD; Falha se não existir
+    db_password: str 
+    
+    class Config:
+        env_file = ".env"
+
+config = Settings()
+print(config.db_password)</code></pre>
+                    </div>
+                </section>
+
+                <!-- SERIALIZATION -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Serialization (Dump)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Output</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Exportar modelos para Dicts ou JSON.</p>
+                        <pre><code class="language-python">model = User(id=1, name="Alice", email="a@b.com")
+
+# Para dicionário Python
+data_dict = model.model_dump()
+# Excluir campos (útil para secrets)
+safe_dict = model.model_dump(exclude={'password'})
+
+# Para String JSON
+json_str = model.model_dump_json()</code></pre>
+                    </div>
+                </section>
+
+                <!-- NESTED MODELS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Nested Structures</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Complex Data</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Validar JSONs aninhados complexos.</p>
+                        <pre><code class="language-python">class Address(BaseModel):
+    city: str
+    zipcode: str
+
+class UserProfile(BaseModel):
+    username: str
+    address: Address # Modelo aninhado
+    
+input_json = {
+    "username": "dev1",
+    "address": {"city": "SP", "zipcode": "01000"}
+}
+profile = UserProfile.model_validate(input_json)
+print(profile.address.city) # SP</code></pre>
+                    </div>
+                </section>
+
+                <!-- COMPUTED FIELDS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Computed Fields</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Derived</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Campos calculados dinamicamente que aparecem na serialização.</p>
+                        <pre><code class="language-python">from pydantic import computed_field
+
+class Rectangle(BaseModel):
+    width: int
+    height: int
+
+    @computed_field
+    def area(self) -> int:
+        return self.width * self.height
+
+r = Rectangle(width=10, height=5)
+print(r.model_dump()) 
+# {'width': 10, 'height': 5, 'area': 50}</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Em Pydantic V2, a performance é muito maior (core em Rust). Use <code>model_validate_json()</code> para parsear strings JSON diretamente em vez de <code>json.loads</code> + Pydantic.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
