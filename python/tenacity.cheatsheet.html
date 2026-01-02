@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenacity Cheatsheet for Data Engineers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-indigo-500 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Tenacity <span class="text-indigo-600">Retrying</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Fault Tolerance • Exponential Backoff • Jitter • Async Support</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded">Resilience</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Stability</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">Zero-Dep</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: BACKOFF -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">Exponential Backoff + Jitter</h2>
+                <div class="flex items-end justify-center gap-2 h-16 border-b border-gray-300 pb-1">
+                    <div class="bg-indigo-200 w-6" style="height: 20%"></div>
+                    <div class="text-xs text-gray-400 self-center">wait...</div>
+                    <div class="bg-indigo-300 w-6" style="height: 40%"></div>
+                    <div class="text-xs text-gray-400 self-center">wait...</div>
+                    <div class="bg-indigo-400 w-6" style="height: 60%"></div>
+                    <div class="text-xs text-gray-400 self-center">wait...</div>
+                    <div class="bg-indigo-500 w-6" style="height: 90%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1 px-4">
+                    <span>Attempt 1</span>
+                    <span>Attempt 4</span>
+                </div>
+                <p class="text-xs text-center mt-2 text-gray-500">Espera aumenta exponencialmente para não derrubar o serviço instável (Thundering Herd).</p>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Basic Decorator</h2>
+                <pre><code class="language-python">from tenacity import retry, stop_after_attempt, wait_fixed
+
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
+def fetch_data():
+    print("Tentando...")
+    raise Exception("Erro de Rede")</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Wait & Stop Strategies -->
+            <div class="space-y-6">
+                
+                <!-- STOP STRATEGIES -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Stop Strategies (Quando Parar)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Limits</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Nunca use <code>@retry</code> sem <code>stop</code> em produção (loop infinito).</p>
+                        <pre><code class="language-python">from tenacity import stop_after_attempt, stop_after_delay
+
+# Para após 5 tentativas
+@retry(stop=stop_after_attempt(5))
+
+# Para após 30 segundos (independente das tentativas)
+@retry(stop=stop_after_delay(30))
+
+# Combinado: O que acontecer primeiro (OR logic)
+@retry(stop=stop_after_attempt(5) | stop_after_delay(60))</code></pre>
+                    </div>
+                </section>
+
+                <!-- WAIT STRATEGIES -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-indigo-400">
+                    <div class="bg-indigo-600 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Wait Strategies (Backoff)</h2>
+                        <span class="text-xs bg-indigo-700 px-2 rounded">Smart Wait</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Evite <code>wait_fixed</code> para APIs públicas.</p>
+                        <pre><code class="language-python">from tenacity import wait_exponential, wait_random
+
+# Exponential Backoff (Recomendado para APIs)
+# 2^x * multiplier. Min 4s, Max 10s.
+# 1ª tentativa: ~2s, 2ª: ~4s, 3ª: ~8s, 4ª: 10s...
+@retry(wait=wait_exponential(multiplier=1, min=4, max=10))
+
+# Jitter (Aleatoriedade)
+# Evita que todos os workers tentem reconectar juntos
+@retry(wait=wait_exponential(multiplier=1, min=4, max=10) + wait_random(0, 2))</code></pre>
+                    </div>
+                </section>
+
+                <!-- ERROR HANDLING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Exception Filtering</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Selective</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Não retente erros fatais (ex: <code>ValueError</code>, Auth 401).</p>
+                        <pre><code class="language-python">from tenacity import retry_if_exception_type
+from requests.exceptions import Timeout, ConnectionError
+
+# Retenta APENAS erros de rede
+@retry(retry=retry_if_exception_type((Timeout, ConnectionError)))
+def call_api():
+    ...
+
+# Retenta SE NÃO for erro de validação
+# @retry(retry=retry_if_not_exception_type(ValueError))</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Advanced & Async -->
+            <div class="space-y-6">
+
+                <!-- ASYNCIO SUPPORT -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Asyncio Support</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Modern Python</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">O decorator funciona nativamente com <code>async/await</code>.</p>
+                        <pre><code class="language-python">import asyncio
+
+@retry(stop=stop_after_attempt(3))
+async def async_fetch(url):
+    print("Fetching async...")
+    await asyncio.sleep(0.1)
+    raise Exception("Boom")
+
+# Uso
+# await async_fetch("http://...")</code></pre>
+                    </div>
+                </section>
+
+                <!-- MANUAL RETRYING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Retrying Context Manager</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Imperative</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Para quando você não pode usar decorators (ex: dentro de um loop).</p>
+                        <pre><code class="language-python">from tenacity import Retrying, RetryError
+
+try:
+    # Cria o controlador de retry na hora
+    for attempt in Retrying(stop=stop_after_attempt(3)):
+        with attempt:
+            print(f"Tentativa {attempt.retry_state.attempt_number}")
+            requests.get("https://unstable.api")
+except RetryError:
+    print("Falhou após 3 tentativas")</code></pre>
+                    </div>
+                </section>
+
+                <!-- LOGGING & HOOKS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Logging & Hooks</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Observability</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Vital para saber o que está acontecendo no pipeline.</p>
+                        <pre><code class="language-python">from tenacity import before_sleep_log, after_log
+import logging
+
+logger = logging.getLogger(__name__)
+
+@retry(
+    stop=stop_after_attempt(3),
+    # Loga ANTES de dormir (mostra tempo de espera)
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    # Loga DEPOIS de cada tentativa (sucesso ou falha)
+    after=after_log(logger, logging.DEBUG)
+)
+def critical_task():
+    ...</code></pre>
+                    </div>
+                </section>
+
+                <!-- CUSTOM CONDITIONS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Custom Retry Logic</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Advanced</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Retentar baseado no <strong>retorno</strong> da função (não só exceção).</p>
+                        <pre><code class="language-python">from tenacity import retry_if_result
+
+def is_empty(value):
+    return value is None or len(value) == 0
+
+@retry(retry=retry_if_result(is_empty))
+def fetch_queue():
+    # Retenta se retornar lista vazia
+    return queue.pop() </code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Em arquiteturas serverless (AWS Lambda), cuidado com <code>wait</code> longos. Você paga pelo tempo de espera. Prefira retries na infra (EventBridge/SQS DLQ) para esperas > 1min.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
