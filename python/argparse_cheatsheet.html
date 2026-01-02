@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Argparse for Data Engineers Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Print optimizations for A4 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        /* Compact code blocks */
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+        .token.keyword { color: #c678dd; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-purple-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-purple-600">Argparse</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">CLI Tools • Validation • Pipelines • Automation</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">Std Lib</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">No Deps</span>
+                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">Docker Friendly</span>
+            </div>
+        </header>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Basics & Validation -->
+            <div class="space-y-6">
+                
+                <!-- GOLDEN RULES -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Best Practices</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Design Principles</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="grid grid-cols-1 gap-2 text-xs">
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 font-bold">★</span>
+                                <p><strong>Use <code>pathlib.Path</code>:</strong> Never use strings for file paths. Argparse can convert them automatically.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 font-bold">★</span>
+                                <p><strong>Env Vars as Defaults:</strong> Make your script container-friendly by falling back to <code>os.environ</code>.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-purple-600 font-bold">★</span>
+                                <p><strong>Strict Types:</strong> Validate dates and numbers at the parsing stage, not deep inside your business logic.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOILERPLATE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Production Boilerplate</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Start Here</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <pre><code class="language-python">import argparse
+import os
+from pathlib import Path
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="ETL Pipeline Executor",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    # Positional (Required)
+    parser.add_argument(
+        "input_path", 
+        type=Path, 
+        help="Path to source CSV/Parquet"
+    )
+    
+    # Optional with Env Var Default
+    parser.add_argument(
+        "--db-url", 
+        default=os.getenv("DB_URL", "sqlite:///prod.db"),
+        help="Database connection string"
+    )
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args()
+    print(f"Processing {args.input_path}")</code></pre>
+                    </div>
+                </section>
+
+                <!-- TYPES & VALIDATION -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-purple-100">
+                    <div class="bg-purple-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Smart Validation (DE Specific)</h2>
+                        <span class="text-xs bg-purple-600 px-2 rounded">Fail Fast</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="bg-yellow-50 p-2 rounded text-xs border-l-4 border-yellow-500 mb-2">
+                            <strong>Why?</strong> Don't wait 10 mins into a job to find out the date format is wrong.
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm">Custom Date Type</h3>
+                            <pre><code class="language-python">from datetime import date
+
+def valid_date(s):
+    try:
+        return date.fromisoformat(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid date: {s}")
+
+parser.add_argument("--start-date", type=valid_date)
+# CLI: script.py --start-date 2023-12-01 (Works)
+# CLI: script.py --start-date 2023/12/01 (Fails immediately)</code></pre>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-bold text-sm">File Handling (argparse.FileType)</h3>
+                            <pre><code class="language-python"># Opens file automatically. Fails if not found.
+parser.add_argument(
+    "--config", 
+    type=argparse.FileType('r'), 
+    default="config.yaml"
+)
+# Usage: data = yaml.safe_load(args.config)</code></pre>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Control & Advanced Patterns -->
+            <div class="space-y-6">
+
+                <!-- FLAGS & CHOICES -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Flags & Enums</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Control Flow</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        
+                        <div>
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-sm">Restricted Choices (Enums)</h3>
+                                <span class="text-xs text-green-600 font-bold">Safety</span>
+                            </div>
+                            <pre><code class="language-python">parser.add_argument(
+    "--env", 
+    choices=['dev', 'staging', 'prod'], 
+    required=True,
+    help="Target environment"
+)</code></pre>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-sm">Boolean Flags (Switches)</h3>
+                                <span class="text-xs text-green-600 font-bold">Toggles</span>
+                            </div>
+                            <pre><code class="language-python"># Default is False. Present = True.
+parser.add_argument(
+    "--dry-run", 
+    action="store_true", 
+    help="Simulate execution without writing"
+)
+
+# Usage: if args.dry_run: print("Skipping write...")</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- LISTS & NARGS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Lists & Multi-Value</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Batching</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Process multiple files or IDs in a single command.</p>
+                        <pre><code class="language-python"># Accepts 1 or more arguments
+parser.add_argument(
+    "--files", 
+    nargs='+', 
+    help="List of files to process"
+)
+
+# CLI: python script.py --files a.csv b.csv c.csv
+# args.files = ['a.csv', 'b.csv', 'c.csv']</code></pre>
+                    </div>
+                </section>
+
+                <!-- SUBCOMMANDS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Git-Style Subcommands</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Pipelines</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Essential for creating a single entry point for your platform (e.g., <code>etl ingest</code>, <code>etl transform</code>).</p>
+                        <pre><code class="language-python">subparsers = parser.add_subparsers(dest='command', required=True)
+
+# Command: pipeline.py extract ...
+p_extract = subparsers.add_parser('extract', help='Pull data')
+p_extract.add_argument('--source', required=True)
+
+# Command: pipeline.py load ...
+p_load = subparsers.add_parser('load', help='Push to DW')
+p_load.add_argument('--target-table', required=True)
+
+# Usage
+# if args.command == 'extract': ...</code></pre>
+                    </div>
+                </section>
+
+                <!-- PRO TIPS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Advanced & Tips</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Hacks</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <ul class="text-xs space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>ArgumentDefaultsHelpFormatter:</strong> Automatically shows the `default` value in the help message (`--help`). Highly recommended.</li>
+                            <li><strong>Secrets:</strong> Never pass passwords via CLI args (they show up in bash history). Use Env Vars or `argparse` to read a path to a key file.</li>
+                            <li><strong>Conflicting Args:</strong> Use <code>parser.add_mutually_exclusive_group()</code> to prevent users from passing both <code>--verbose</code> and <code>--quiet</code>.</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> For extremely complex CLIs, libraries like <code>Typer</code> or <code>Click</code> are great, but <code>argparse</code> is built-in (Zero Dependency), making it superior for lightweight Docker containers and Lambda functions.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
