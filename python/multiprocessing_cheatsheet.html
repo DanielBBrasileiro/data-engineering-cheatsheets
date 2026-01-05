@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Multiprocessing Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Diagram Styles */
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        .process-box {
+            border: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: bold;
+            position: relative;
+        }
+        .worker-box {
+            background-color: #dbeafe; /* blue-100 */
+            border-color: #93c5fd; /* blue-300 */
+            color: #1e40af; /* blue-800 */
+        }
+        .arrow-down {
+            width: 2px;
+            height: 20px;
+            background-color: #94a3b8;
+            margin: 0 auto;
+        }
+        .pool-grid {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-emerald-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-emerald-600">Multiprocessing</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Bypass GIL • CPU-Bound • Pools • Data Pipelines</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Std Lib</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Parallel</span>
+                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">High Performance</span>
+            </div>
+        </header>
+
+        <!-- VISUAL DIAGRAM SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            
+            <!-- Pool Diagram -->
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">O Modelo Pool (Map-Reduce)</h2>
+                <div class="diagram-container">
+                    <!-- Main Process -->
+                    <div class="process-box w-full max-w-xs text-center">Main Process (Orchestrator)</div>
+                    
+                    <div class="arrow-down"></div>
+                    
+                    <!-- The Pool -->
+                    <div class="process-box w-full max-w-xs text-center bg-gray-50 border-gray-300">
+                        Pool (Distributor)
+                        <div class="text-xs font-normal mt-1">Chunks Data &rarr; Assigns to Workers</div>
+                    </div>
+
+                    <div class="arrow-down"></div>
+
+                    <!-- Workers -->
+                    <div class="pool-grid">
+                        <div class="process-box worker-box">Worker 1<br><span class="text-xs font-normal">CPU Core 0</span></div>
+                        <div class="process-box worker-box">Worker 2<br><span class="text-xs font-normal">CPU Core 1</span></div>
+                        <div class="process-box worker-box">Worker 3<br><span class="text-xs font-normal">CPU Core 2</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Threading vs Multiprocessing -->
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3">Multiprocessing vs Threading</h2>
+                <div class="space-y-4 text-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="w-24 font-bold text-emerald-600 shrink-0">Multiprocessing</div>
+                        <div>
+                            <p class="font-bold">CPU-Bound (Cálculo Pesado)</p>
+                            <p class="text-xs text-gray-600">Pandas apply, ML Inference, Image Resize, JSON Parsing massivo.</p>
+                            <span class="text-xs bg-emerald-100 text-emerald-800 px-1 rounded">Memória Separada (Isolada)</span>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-100"></div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-24 font-bold text-blue-600 shrink-0">Threading</div>
+                        <div>
+                            <p class="font-bold">I/O-Bound (Esperando Rede/Disco)</p>
+                            <p class="text-xs text-gray-600">Requests API, Banco de Dados, Leitura de Arquivos.</p>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-1 rounded">Memória Compartilhada</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: The Pool (Data Engineering Workhorse) -->
+            <div class="space-y-6">
+                
+                <!-- POOL BASICS -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-emerald-100">
+                    <div class="bg-emerald-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. The Pool Executor</h2>
+                        <span class="text-xs bg-emerald-600 px-2 rounded">Best Practice</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">O <code>Pool</code> gerencia os processos para você. Use <code>with</code> para fechar automaticamente.</p>
+                        <pre><code class="language-python">from multiprocessing import Pool, cpu_count
+
+def heavy_transform(row):
+    return row * row
+
+if __name__ == '__main__':
+    # Usa todos os cores disponíveis
+    with Pool(processes=cpu_count()) as pool:
+        data = [1, 2, 3, 4, 5]
+        
+        # map: Bloqueia até terminar tudo. Retorna lista.
+        results = pool.map(heavy_transform, data)
+        print(results) # [1, 4, 9, 16, 25]</code></pre>
+                    </div>
+                </section>
+
+                <!-- MAP VS IMAP -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Map vs Imap (Critical)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Memory Management</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div class="border p-2 rounded bg-red-50 text-red-900 border-red-200">
+                                <span class="font-bold">pool.map()</span><br>
+                                Converte iterável em lista. Carrega TUDO na RAM antes de enviar.<br>
+                                <em>Rápido para dados pequenos.</em>
+                            </div>
+                            <div class="border p-2 rounded bg-green-50 text-green-900 border-green-200">
+                                <span class="font-bold">pool.imap()</span><br>
+                                Lazy (Generator). Envia chunks. Começa a processar imediatamente.<br>
+                                <em>Essencial para Big Data.</em>
+                            </div>
+                        </div>
+
+                        <pre><code class="language-python"># Use IMAP para grandes datasets
+with Pool() as p:
+    # chunksize=10 melhora performance em iteráveis longos
+    for res in p.imap(heavy_transform, huge_list, chunksize=10):
+        save_to_db(res) # Salva assim que fica pronto</code></pre>
+                    </div>
+                </section>
+
+                <!-- MULTI ARGUMENTS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Múltiplos Argumentos</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Starmap</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1"><code>map</code> só aceita 1 argumento. Para funções com vários args, use <code>starmap</code>.</p>
+                        <pre><code class="language-python">def complex_calc(x, y, factor):
+    return (x + y) * factor
+
+inputs = [(1, 2, 10), (3, 4, 20)] # Lista de Tuplas
+
+with Pool() as p:
+    # Desempacota a tupla como argumentos
+    results = p.starmap(complex_calc, inputs)</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Manual Control & IPC -->
+            <div class="space-y-6">
+
+                <!-- MANUAL PROCESS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Processo Manual</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Fine Grained</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Use quando precisar de um processo "worker" rodando em background para sempre (daemon).</p>
+                        <pre><code class="language-python">from multiprocessing import Process
+
+def worker(name):
+    print(f"Hello {name}")
+
+p = Process(target=worker, args=('Bob',))
+p.start() # Inicia
+p.join()  # Espera terminar (Bloqueia Main)</code></pre>
+                    </div>
+                </section>
+
+                <!-- QUEUES & IPC -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Compartilhando Dados (IPC)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Safe</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Processos <strong>não compartilham memória</strong> global. Use <code>Queue</code> para trocar mensagens.</p>
+                        <pre><code class="language-python">from multiprocessing import Process, Queue
+
+def producer(q):
+    q.put("Payload")
+
+def consumer(q):
+    msg = q.get() # Bloqueia até chegar algo
+    print(msg)
+
+q = Queue()
+p1 = Process(target=producer, args=(q,))
+p2 = Process(target=consumer, args=(q,))
+p1.start(); p2.start()</code></pre>
+                    </div>
+                </section>
+
+                <!-- CONTEXTS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Spawn vs Fork</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">OS Differences</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <ul class="text-xs space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>Fork (Linux Default):</strong> Rápido. Copia memória "Copy-on-Write". Pode ser instável com algumas libs C (como OpenSSL).</li>
+                            <li><strong>Spawn (Windows/Mac Default):</strong> Lento (cria novo interpretador Python do zero). Seguro e limpo.</li>
+                        </ul>
+                        <pre><code class="language-python">import multiprocessing as mp
+
+# Forçar contexto (recomendado para consistência)
+ctx = mp.get_context('spawn')
+with ctx.Pool() as p:
+    ...</code></pre>
+                    </div>
+                </section>
+
+                <!-- SHARED MEMORY -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Shared State (Cuidado)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Manager</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Se <em>realmente</em> precisar compartilhar um dicionário ou lista editável.</p>
+                        <pre><code class="language-python">from multiprocessing import Manager
+
+with Manager() as manager:
+    # Dict especial que sincroniza entre processos
+    d = manager.dict()
+    l = manager.list()
+    
+    p = Process(target=worker, args=(d, l))
+    p.start(); p.join()
+    # Dados persistem aqui</code></pre>
+                        <div class="bg-yellow-50 p-2 rounded text-xs border-l-4 border-yellow-500 mt-2">
+                            <strong>Aviso:</strong> Managers são mais lentos que Queues porque usam Locks e Proxies internos.
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Sempre proteja seu código com <code>if __name__ == '__main__':</code>. Sem isso, o método 'spawn' (Windows/Mac) entrará em loop recursivo infinito tentando importar o módulo main novamente.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>
