@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python AsyncIO Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Print optimizations for A4 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        /* Compact code blocks */
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+        .token.keyword { color: #c678dd; } /* async/await pop */
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-indigo-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-indigo-600">AsyncIO</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Event Loop • Coroutines • Tasks • Non-blocking I/O Patterns</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-indigo-100 text-indigo-800 px-2 py-1 rounded">Python 3.7+</span>
+                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">Concurrency</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">I/O Bound</span>
+            </div>
+        </header>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Fundamentals & Execution -->
+            <div class="space-y-6">
+                
+                <!-- CORE CONCEPTS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Core Syntax & Execution</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">The Basics</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="bg-indigo-50 p-2 rounded border-l-4 border-indigo-500 text-xs mb-2">
+                            <strong>Mental Model:</strong> Single-threaded cooperative multitasking. Tasks yield control (`await`) when waiting for I/O, allowing other tasks to run.
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-800">Hello World (Standard Boilerplate)</h3>
+                            <pre><code class="language-python">import asyncio
+
+async def main():
+    print('Hello')
+    await asyncio.sleep(1) # Yields control
+    print('World')
+
+if __name__ == "__main__":
+    asyncio.run(main()) # Creates loop, runs, closes</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-800">Old vs New Way</h3>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="p-2 bg-red-50 text-red-800 rounded">
+                                    <strong>Don't use (Legacy):</strong><br>
+                                    <code>loop = get_event_loop()</code><br>
+                                    <code>loop.run_until_complete()</code>
+                                </div>
+                                <div class="p-2 bg-green-50 text-green-800 rounded">
+                                    <strong>Use (Python 3.7+):</strong><br>
+                                    <code>asyncio.run(main())</code><br>
+                                    <code>asyncio.create_task()</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONCURRENCY -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Running Concurrently</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Speed Up</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        
+                        <!-- Tasks -->
+                        <div>
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-sm">Fire & Forget (Background Tasks)</h3>
+                                <span class="text-xs text-purple-600 font-bold">create_task</span>
+                            </div>
+                            <p class="text-xs text-gray-600 mb-1">Schedule coroutine on the loop immediately.</p>
+                            <pre><code class="language-python">async def main():
+    # Schedules execution, doesn't block here
+    task = asyncio.create_task(other_coro()) 
+    
+    # Do other work...
+    await asyncio.sleep(0.1)
+    
+    await task # Wait for result eventually</code></pre>
+                        </div>
+
+                        <!-- Gather -->
+                        <div>
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-sm">Run Many & Wait (Gather)</h3>
+                                <span class="text-xs text-purple-600 font-bold">Parallel I/O</span>
+                            </div>
+                            <p class="text-xs text-gray-600 mb-1">Run N coroutines, wait for all, return list of results.</p>
+                            <pre><code class="language-python"># Returns results in SAME order as inputs
+results = await asyncio.gather(
+    fetch_url('google.com'),
+    fetch_url('yahoo.com'),
+    return_exceptions=True # Don't crash on one error
+)</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TIMEOUTS & WAITING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Control Flow</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Safety</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div>
+                            <h3 class="font-bold text-sm">Timeouts (Critical for Production)</h3>
+                            <pre><code class="language-python">try:
+    await asyncio.wait_for(long_task(), timeout=1.0)
+except asyncio.TimeoutError:
+    print("Task took too long!")</code></pre>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-bold text-sm">Processing as they Complete</h3>
+                            <p class="text-xs text-gray-600 mb-1">Don't wait for the slowest task.</p>
+                            <pre><code class="language-python">tasks = [fetch(url) for url in urls]
+# Yields tasks as soon as they finish
+for finished_task in asyncio.as_completed(tasks):
+    result = await finished_task
+    print(f"One done: {result}")</code></pre>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Patterns, Synchronization, Pitfalls -->
+            <div class="space-y-6">
+
+                <!-- SYNCHRONIZATION -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-indigo-100">
+                    <div class="bg-indigo-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Async Patterns</h2>
+                        <span class="text-xs bg-indigo-600 px-2 rounded">Real World</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        
+                        <!-- Producer Consumer -->
+                        <div>
+                            <h3 class="font-bold text-sm">Producer-Consumer (Queue)</h3>
+                            <p class="text-xs text-gray-600 mb-1">Decouple ingestion from processing.</p>
+                            <pre><code class="language-python">queue = asyncio.Queue(maxsize=10)
+
+async def producer():
+    for i in range(100):
+        await queue.put(i) # Blocks if full
+
+async def consumer():
+    while True:
+        item = await queue.get() # Blocks if empty
+        await process(item)
+        queue.task_done()
+
+# Wait for queue to be fully processed
+await queue.join()</code></pre>
+                        </div>
+
+                        <!-- Rate Limiting -->
+                        <div>
+                            <h3 class="font-bold text-sm">Rate Limiting (Semaphore)</h3>
+                            <p class="text-xs text-gray-600 mb-1">Limit concurrent connections (e.g., to DB/API).</p>
+                            <pre><code class="language-python">sem = asyncio.Semaphore(10) # Max 10 concurrent
+
+async def safe_fetch(url):
+    async with sem:  # Acquires lock
+        return await fetch(url)
+        # Releases lock automatically</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BLOCKING CODE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-red-50 text-red-900 border-red-200 border px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. The "Blocking" Trap</h2>
+                        <span class="text-xs bg-red-100 px-2 rounded">Danger Zone</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs">Never call blocking IO (<code>requests</code>, <code>time.sleep</code>) or heavy CPU directly in an async function. It pauses the <strong>entire</strong> loop.</p>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div class="border p-2 rounded bg-white">
+                                <span class="text-red-600 font-bold">❌ BLOCKING</span><br>
+                                <code>time.sleep(1)</code><br>
+                                <code>requests.get(url)</code>
+                            </div>
+                            <div class="border p-2 rounded bg-white">
+                                <span class="text-green-600 font-bold">✅ NON-BLOCKING</span><br>
+                                <code>await asyncio.sleep(1)</code><br>
+                                <code>await aiohttp_session.get()</code>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-sm">Solution: Run in Executor</h3>
+                            <p class="text-xs text-gray-600 mb-1">Offload blocking code to a thread pool.</p>
+                            <pre><code class="language-python"># Run synchronous code without blocking loop
+await asyncio.to_thread(blocking_func, arg1) 
+# (Python 3.9+)
+
+# OR Legacy/Custom Executor:
+loop = asyncio.get_running_loop()
+await loop.run_in_executor(None, blocking_func)</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DEBUGGING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Debugging & Tools</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Dev Mode</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div>
+                            <h3 class="font-bold text-sm">Debug Mode</h3>
+                            <p class="text-xs text-gray-600 mb-1">Detects slow callbacks (>100ms) and unawaited coroutines.</p>
+                            <pre><code class="language-bash">PYTHONASYNCIODEBUG=1 python script.py
+# Or in code:
+asyncio.run(main(), debug=True)</code></pre>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm">Essential Libraries</h3>
+                            <ul class="text-xs space-y-1 mt-1 list-disc list-inside">
+                                <li><strong>aiohttp:</strong> Async HTTP Client/Server</li>
+                                <li><strong>asyncpg:</strong> High-performance PostgreSQL</li>
+                                <li><strong>motor:</strong> Async MongoDB</li>
+                                <li><strong>uvloop:</strong> Ultra-fast event loop replacement</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> AsyncIO shines for I/O-bound tasks (network, DB). For CPU-bound tasks (data crunching), use <code>multiprocessing</code> instead.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>
