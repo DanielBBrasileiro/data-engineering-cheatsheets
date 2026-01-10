@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Logging for Data Engineers Cheatsheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Print optimizations for A4 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        /* Compact code blocks */
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+        .token.keyword { color: #c678dd; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-orange-600 pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Python <span class="text-orange-600">Logging</span></h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Observability • Structuring • Rotation • Debugging Pipelines</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-orange-100 text-orange-800 px-2 py-1 rounded">Std Lib</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Production</span>
+                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded">DevOps</span>
+            </div>
+        </header>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Setup & Configuration -->
+            <div class="space-y-6">
+                
+                <!-- THE GOLDEN RULES -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. The Golden Rules</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Best Practices</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <div class="grid grid-cols-1 gap-2 text-xs">
+                            <div class="flex items-start gap-2">
+                                <span class="text-red-500 font-bold">❌</span>
+                                <p><strong>NEVER use <code>print()</code>:</strong> It goes to stdout, isn't timestamped, has no levels, and gets lost in Airflow/Spark executors.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-500 font-bold">✅</span>
+                                <p><strong>Use <code>getLogger(__name__)</code>:</strong> Keeps a namespace hierarchy (e.g., <code>etl.extract.api</code>) so you know exactly where the log came from.</p>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="text-green-500 font-bold">✅</span>
+                                <p><strong>Structure your logs:</strong> Use JSON or standardized strings for easy parsing in Datadog/Splunk.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOILERPLATE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Production Setup (DictConfig)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Config</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Avoid <code>basicConfig</code> in production. Use <code>dictConfig</code> for granular control over file rotation and formatters.</p>
+                        <pre><code class="language-python">import logging
+import logging.config
+
+LOGGING_CONFIG = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+        'json': { # Good for ELK/Datadog
+            'format': '{"time": "%(asctime)s", "level": "%(levelname)s", "msg": "%(message)s"}'
+        }
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard',
+            'level': 'INFO'
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'pipeline.log',
+            'maxBytes': 10*1024*1024, # 10MB
+            'backupCount': 5, # Keep 5 files
+            'formatter': 'json',
+            'level': 'ERROR'
+        }
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    }
+}
+
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)</code></pre>
+                    </div>
+                </section>
+
+                <!-- LEVELS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Logging Levels (DE Context)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Semantics</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-gray-100 font-bold text-gray-700">
+                                <tr><th class="p-2">Level</th><th class="p-2">Data Eng Use Case</th></tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr><td class="p-2 font-mono text-gray-500">DEBUG</td><td class="p-2">Raw API payloads, SQL queries generated.</td></tr>
+                                <tr><td class="p-2 font-mono text-blue-600">INFO</td><td class="p-2">"Extracted 500 rows", "Job started". (Heartbeat)</td></tr>
+                                <tr><td class="p-2 font-mono text-yellow-600">WARNING</td><td class="p-2">Non-blocking data issues (e.g., "Field 'age' missing, defaulted to null").</td></tr>
+                                <tr><td class="p-2 font-mono text-red-600">ERROR</td><td class="p-2">Task failure. DB connection lost. Pipeline stops.</td></tr>
+                                <tr><td class="p-2 font-mono text-red-900 font-bold">CRITICAL</td><td class="p-2">System outage. Disk full. Wake up call.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Advanced & Patterns -->
+            <div class="space-y-6">
+
+                <!-- EXCEPTION HANDLING -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-orange-100">
+                    <div class="bg-orange-700 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Exceptions (Crucial)</h2>
+                        <span class="text-xs bg-orange-600 px-2 rounded">Tracebacks</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Never just log "Error happened". You need the stack trace to debug ETL failures.</p>
+                        
+                        <div class="flex justify-between mt-2">
+                            <h3 class="font-bold text-sm">The Right Way (logger.exception)</h3>
+                        </div>
+                        <pre><code class="language-python">try:
+    data = extract_from_api()
+    transform(data)
+except Exception as e:
+    # Auto-adds stack trace to the log
+    logger.exception("Pipeline failed during transformation")
+    raise # Re-raise to fail the Airflow task</code></pre>
+                        
+                         <div class="flex justify-between mt-2">
+                            <h3 class="font-bold text-sm">Alternative (exc_info)</h3>
+                        </div>
+                        <pre><code class="language-python"># If you want to log as ERROR but keep traceback
+logger.error("Failed to connect", exc_info=True)</code></pre>
+                    </div>
+                </section>
+
+                <!-- CONTEXT & STRUCTURE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Structured/Context Logging</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Metadata</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Pass context (like <code>run_id</code>, <code>user_id</code>) using the <code>extra</code> parameter. This enables filtering in log aggregation tools.</p>
+                        <pre><code class="language-python">run_id = "job_2023_10_01"
+
+logger.info(
+    "Processing batch complete", 
+    extra={"run_id": run_id, "rows": 5000}
+)
+# Output (with %s formatter): 
+# ... Processing batch complete
+
+# Output (with JSON formatter):
+# {"msg": "Processing...", "run_id": "job_...", "rows": 5000}</code></pre>
+                        
+                        <div class="bg-blue-50 p-2 rounded text-xs border-l-4 border-blue-500">
+                            <strong>Pro Tip:</strong> Use <code>logging.LoggerAdapter</code> to inject <code>run_id</code> automatically into every log call in a specific task.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PERFORMANCE -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Performance (Lazy Logging)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Optimization</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">String interpolation (f-strings) happens <strong>before</strong> the logging level check. This wastes CPU if the log level is disabled.</p>
+                        
+                         <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div class="border p-2 rounded bg-red-50 text-red-900 border-red-200">
+                                <span class="font-bold">❌ Eager (Slow)</span><br>
+                                <code>logger.debug(f"Row: {heavy_obj}")</code><br>
+                                <em>Calculates string even if DEBUG is off.</em>
+                            </div>
+                            <div class="border p-2 rounded bg-green-50 text-green-900 border-green-200">
+                                <span class="font-bold">✅ Lazy (Fast)</span><br>
+                                <code>logger.debug("Row: %s", heavy_obj)</code><br>
+                                <em>Calculates only if DEBUG is on.</em>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- HANDLERS -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. Essential Handlers</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Output</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <ul class="text-xs space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>StreamHandler:</strong> Sends to <code>stdout/stderr</code>. Standard for containerized apps (Docker/K8s) where logs are scraped from stdout.</li>
+                            <li><strong>RotatingFileHandler:</strong> Rotates logs by size (e.g., 10MB). Essential for bare-metal servers or persistent VMs to prevent disk saturation.</li>
+                            <li><strong>TimedRotatingFileHandler:</strong> Rotates logs by time (e.g., every midnight). Good for daily audit trails.</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> In Distributed Systems (Spark/Dask), logs on workers stay on workers. Use a centralized logging server or structured logging + file collection (Fluentd/Filebeat) to aggregate them.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+</body>
+</html>
