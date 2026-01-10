@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Python Cheatsheet for Data Engineers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; }
+        code { font-family: 'JetBrains Mono', monospace; }
+        
+        @media print {
+            body { background: white; margin: 0; padding: 0; font-size: 11px; }
+            .container { max-width: 100% !important; margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; }
+            h1 { font-size: 18pt; }
+        }
+        
+        pre { margin: 0.25rem 0 !important; padding: 0.5rem !important; font-size: 0.75rem !important; line-height: 1.2 !important; }
+        .token.comment { color: #8b9bb4; font-style: italic; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto container bg-white shadow-xl min-h-screen p-6 md:p-8 rounded-lg">
+        
+        <!-- Header -->
+        <header class="border-b-4 border-black pb-4 mb-6 flex justify-between items-start">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Apache <span class="text-black">Kafka</span> (Python)</h1>
+                <p class="text-sm md:text-base text-gray-600 mt-1 font-medium">Producers • Consumers • Groups • Avro • Admin • Partitions</p>
+            </div>
+            <div class="flex gap-2 text-xs font-bold uppercase tracking-wider">
+                <span class="bg-gray-800 text-white px-2 py-1 rounded">Streaming</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Real-Time</span>
+                <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded">Confluent</span>
+            </div>
+        </header>
+
+        <!-- VISUAL CONCEPT: CONSUMER GROUPS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <section class="card bg-white border rounded-lg overflow-hidden p-4">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-3 text-center">Consumer Groups (Escalabilidade)</h2>
+                <div class="flex flex-col items-center gap-2 text-xs">
+                    <div class="w-full bg-gray-100 border p-2 rounded text-center">
+                        <strong>Topic: 'logs' (3 Partitions)</strong>
+                        <div class="flex justify-center gap-2 mt-1">
+                            <span class="bg-gray-300 px-2 rounded">P0</span>
+                            <span class="bg-gray-300 px-2 rounded">P1</span>
+                            <span class="bg-gray-300 px-2 rounded">P2</span>
+                        </div>
+                    </div>
+                    <div class="text-xl text-gray-400">⬇ (Automatic Rebalancing)</div>
+                    <div class="w-full border-2 border-dashed border-blue-300 p-2 rounded relative">
+                        <span class="absolute top-0 right-0 bg-blue-100 text-blue-800 px-1 text-[10px]">Group: 'log-processors'</span>
+                        <div class="flex justify-around mt-2">
+                            <div class="bg-blue-50 border border-blue-200 p-2 rounded text-center w-1/3 mx-1">
+                                Consumer A<br><span class="text-[10px] text-green-600 font-bold">Lê P0</span>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 p-2 rounded text-center w-1/3 mx-1">
+                                Consumer B<br><span class="text-[10px] text-green-600 font-bold">Lê P1, P2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-center mt-2 text-gray-500">Se o Consumer B cair, o Kafka realoca P1 e P2 para o Consumer A automaticamente.</p>
+            </section>
+            
+            <section class="card bg-white border rounded-lg overflow-hidden p-4 flex flex-col justify-center">
+                <h2 class="font-bold text-sm uppercase text-gray-500 mb-2">Recommended Lib</h2>
+                <p class="text-xs text-gray-600 mb-2">Use <code>confluent-kafka</code> (wrapper C/C++ librdkafka) para alta performance. Use <code>kafka-python</code> apenas se precisar de pure-python (ex: Lambda com restrições de build).</p>
+                <pre><code class="language-bash">pip install confluent-kafka
+# Opcional para Avro:
+pip install "confluent-kafka[avro]"</code></pre>
+            </section>
+        </div>
+
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- COLUMN 1: Basic Messaging -->
+            <div class="space-y-6">
+                
+                <!-- PRODUCER -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">1. Producer (Envio Assíncrono)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Write</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">O <code>produce()</code> é assíncrono. Use <code>flush()</code> para garantir o envio.</p>
+                        <pre><code class="language-python">from confluent_kafka import Producer
+import json
+
+p = Producer({'bootstrap.servers': 'localhost:9092'})
+
+def delivery_report(err, msg):
+    if err: print(f"Erro: {err}")
+    else: print(f"Enviado para {msg.topic()} [{msg.partition()}]")
+
+# Callback é chamado em background pelo poll()
+p.produce(
+    'my-topic', 
+    key='user-1', 
+    value=json.dumps({'event': 'login'}), 
+    callback=delivery_report
+)
+
+# Essencial: Força o envio dos buffers
+p.flush()</code></pre>
+                    </div>
+                </section>
+
+                <!-- CONSUMER -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">2. Consumer (Polling Loop)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Read</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Consumers puxam dados (pull) em loop infinito.</p>
+                        <pre><code class="language-python">from confluent_kafka import Consumer
+
+c = Consumer({
+    'bootstrap.servers': 'localhost:9092',
+    'group.id': 'my-group',
+    'auto.offset.reset': 'earliest' # Ler do começo se novo
+})
+
+c.subscribe(['my-topic'])
+
+try:
+    while True:
+        msg = c.poll(1.0) # Timeout 1s
+        if msg is None: continue
+        if msg.error():
+            print(f"Erro: {msg.error()}")
+            continue
+            
+        print(f"Recebido: {msg.value().decode('utf-8')}")
+finally:
+    c.close() # Commit final e sai do grupo</code></pre>
+                    </div>
+                </section>
+
+                <!-- ADMIN CLIENT -->
+                <section class="card bg-white border rounded-lg overflow-hidden ring-2 ring-black">
+                    <div class="bg-black text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">3. Admin Client (Infra)</h2>
+                        <span class="text-xs bg-gray-700 px-2 rounded">DevOps</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Criar tópicos programaticamente (útil para testes/CI).</p>
+                        <pre><code class="language-python">from confluent_kafka.admin import AdminClient, NewTopic
+
+a = AdminClient({'bootstrap.servers': 'localhost:9092'})
+
+new_topics = [
+    NewTopic("users", num_partitions=3, replication_factor=1),
+    NewTopic("logs", num_partitions=6, replication_factor=1)
+]
+
+# Retorna dict de Futures
+fs = a.create_topics(new_topics)
+
+for topic, f in fs.items():
+    try:
+        f.result() # Bloqueia até criar
+        print(f"Tópico {topic} criado")
+    except Exception as e:
+        print(f"Falha em {topic}: {e}")</code></pre>
+                    </div>
+                </section>
+            </div>
+
+            <!-- COLUMN 2: Advanced & Schema Registry -->
+            <div class="space-y-6">
+
+                <!-- AVRO & SCHEMA REGISTRY -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">4. Avro (Schema Registry)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Contracts</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Garante a evolução segura do schema dos dados.</p>
+                        <pre><code class="language-python">from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry.avro import AvroSerializer
+from confluent_kafka.serialization import StringSerializer
+
+schema_str = """
+{
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "age", "type": "int"}
+  ]
+}
+"""
+
+registry = SchemaRegistryClient({'url': 'http://localhost:8081'})
+avro_serializer = AvroSerializer(registry, schema_str)
+
+# Serializa e envia
+p.produce(
+    topic='users-avro',
+    key=StringSerializer()('user_1'),
+    value=avro_serializer(user_obj, SerializationContext(...))
+)</code></pre>
+                    </div>
+                </section>
+
+                <!-- PARTITIONING STRATEGY -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">5. Particionamento (Ordering)</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Performance</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <ul class="text-xs space-y-2 list-disc list-inside text-gray-700">
+                            <li><strong>Mesma Key = Mesma Partição:</strong> Garante ordem cronológica para aquele objeto.</li>
+                            <li><strong>Key Nula (Round Robin):</strong> Distribui carga igualmente, mas perde ordem global.</li>
+                        </ul>
+                        <pre><code class="language-python"># Ordem garantida para este cliente
+p.produce('orders', key='client_id_123', value='order_created')
+p.produce('orders', key='client_id_123', value='order_paid')
+
+# Carga balanceada (sem ordem garantida entre msgs)
+p.produce('logs', key=None, value='log_entry_1')</code></pre>
+                    </div>
+                </section>
+
+                <!-- OFFSET MANAGEMENT -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">6. Controle de Offset</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Reliability</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Por padrão, o Kafka commita offsets periodicamente (<code>enable.auto.commit=True</code>). Para pipelines "Exactly Once" (ou "At Least Once" robusto), faça commit manual.</p>
+                        <pre><code class="language-python"># Config: 'enable.auto.commit': False
+
+msg = c.poll(1.0)
+if msg:
+    process_data(msg)
+    # Commit síncrono após processar com sucesso
+    c.commit(message=msg, asynchronous=False)</code></pre>
+                    </div>
+                </section>
+
+                <!-- BATCH PRODUCING -->
+                <section class="card bg-white border rounded-lg overflow-hidden">
+                    <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center">
+                        <h2 class="font-bold text-sm uppercase">7. High Throughput Settings</h2>
+                        <span class="text-xs bg-slate-700 px-2 rounded">Tuning</span>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <p class="text-xs text-gray-600 mb-1">Ajuste o buffer do Producer para enviar em lotes maiores (menos I/O).</p>
+                        <pre><code class="language-python">conf = {
+    'bootstrap.servers': 'host',
+    'linger.ms': 100,      # Espera até 100ms para encher lote
+    'batch.num.messages': 10000, # Ou até 10k msgs
+    'compression.type': 'lz4'    # Comprime (CPU vs Network)
+}
+p = Producer(conf)</code></pre>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p><strong>Pro Tip:</strong> Em consumers de alto volume, prefira <code>consume(num_messages=100)</code> em vez de <code>poll()</code> individual para processar micro-lotes e reduzir overhead de chamadas Python.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+</body>
+</html>
