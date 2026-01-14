@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Git & GitHub Cheatsheet (80/20)</title>
+    <!-- Fontes Otimizadas -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #f05032; /* Git Orange */
+            --secondary-color: #3e2c00; /* Darker accent */
+            --header-bg: #fff0eb;
+            --code-bg: #f6f8fa;
+            --text-color: #24292e;
+            --comment-color: #586069;
+            --border-color: #e1e4e8;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 8pt;
+            line-height: 1.25;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0.5cm;
+            background-color: #fff;
+        }
+
+        /* Layout em 2 Colunas */
+        .container {
+            column-count: 2;
+            column-gap: 0.5cm;
+            width: 100%;
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            column-span: all;
+        }
+
+        h1 {
+            font-size: 16pt;
+            margin: 0;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+
+        h1 span { color: var(--primary-color); }
+
+        .meta {
+            font-size: 8pt;
+            color: var(--comment-color);
+            margin-top: 4px;
+        }
+
+        section {
+            break-inside: avoid;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 6px;
+        }
+
+        h2 {
+            font-size: 9pt;
+            font-weight: 800;
+            color: #fff;
+            background-color: var(--primary-color);
+            margin: -6px -6px 6px -6px;
+            padding: 4px 8px;
+            border-radius: 3px 3px 0 0;
+            text-transform: uppercase;
+        }
+
+        /* Comandos */
+        .cmd-block {
+            margin-bottom: 5px;
+        }
+
+        .cmd-desc {
+            font-weight: 600;
+            color: #333;
+            font-size: 7.5pt;
+            margin-bottom: 1px;
+            display: block;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.5pt;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 2px;
+            color: #032f62; /* Github Blue Code */
+            display: block;
+            white-space: pre-wrap;
+            border-left: 2px solid var(--border-color);
+        }
+
+        code.inline {
+            display: inline;
+            border: none;
+            padding: 1px 3px;
+        }
+
+        .note {
+            font-size: 7pt;
+            color: var(--comment-color);
+            font-style: italic;
+            margin-top: 1px;
+            display: block;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+
+        /* Conventional Commits Styles */
+        .cc-type {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7pt;
+            color: white;
+            margin-right: 4px;
+        }
+        .cc-feat { background-color: #2da44e; } /* Green */
+        .cc-fix { background-color: #cf222e; } /* Red */
+        .cc-chore { background-color: #8250df; } /* Purple */
+        .cc-break { background-color: #bf3989; } /* Pink/Alert */
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><span>Git & GitHub</span> Cheatsheet</h1>
+        <div class="meta">
+            Princípio 80/20 • Do Básico ao Avançado • Versionamento, Branches e Colaboração
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. CONFIGURAÇÃO INICIAL -->
+        <section>
+            <h2>1. Configuração Inicial (Setup)</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Identidade (Faça uma vez)</span>
+                <code>git config --global user.name "Seu Nome"
+git config --global user.email "email@ex.com"</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Verificar Config</span>
+                <code>git config --list</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Iniciar Projeto</span>
+                <code>git init          # Local (do zero)
+git clone &lt;url&gt;   # Remoto (download)</code>
+            </div>
+        </section>
+
+        <!-- 2. CICLO DE VIDA (CORE) -->
+        <section>
+            <h2>2. Ciclo de Vida (O Dia a Dia)</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Ver Estado (Essencial)</span>
+                <code>git status</code>
+                <span class="note">Mostra o que mudou e o que está staged.</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Preparar (Stage)</span>
+                <code>git add .           # Tudo
+git add arquivo.txt # Específico</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Salvar Versão (Commit)</span>
+                <code>git commit -m "Mensagem clara"</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Atalho (Add + Commit)</span>
+                <code>git commit -am "Mensagem"</code>
+                <span class="note">Só funciona para arquivos já rastreados.</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Revisar Mudanças (Diff)</span>
+                <code>git diff          # Trabalho vs Staged
+git diff --staged # Staged vs Último Commit</code>
+            </div>
+        </section>
+
+        <!-- 3. BRANCHES & MERGE -->
+        <section>
+            <h2>3. Branches & Fusão</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Gerenciar</span>
+                <code>git branch            # Listar
+git branch &lt;nova&gt;     # Criar
+git branch -d &lt;nome&gt;  # Deletar</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Trocar (Checkout)</span>
+                <code>git checkout &lt;branch&gt;
+git switch &lt;branch&gt;   # Moderno</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Criar e Trocar (Atalho)</span>
+                <code>git checkout -b &lt;nova-branch&gt;</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Mesclar (Merge)</span>
+                <code>git checkout main
+git merge &lt;feature&gt;</code>
+                <span class="note">Traz a &lt;feature&gt; para a main.</span>
+            </div>
+        </section>
+
+        <!-- 4. SINCRONIZANDO (REMOTE) -->
+        <section>
+            <h2>4. Sincronizando (Remote)</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Baixar (Fetch/Pull)</span>
+                <code>git fetch origin      # Só baixa (seguro)
+git pull origin main  # Baixa + Merge</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Enviar (Push)</span>
+                <code>git push origin &lt;branch&gt;
+git push -u origin &lt;branch&gt; # 1ª vez</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Verificar Remotos</span>
+                <code>git remote -v</code>
+            </div>
+        </section>
+
+        <!-- 5. DESFAZENDO & CORRIGINDO -->
+        <section>
+            <h2>5. Desfazendo Coisas</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Corrigir Último Commit</span>
+                <code>git commit --amend</code>
+                <span class="note">Reescreve histórico. Não use após push!</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Desfazer Stage (Unstage)</span>
+                <code>git reset HEAD &lt;arquivo&gt;</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Descartar Mudanças Locais</span>
+                <code>git checkout -- &lt;arquivo&gt;</code>
+                <span class="note">Cuidado: Perda permanente de dados não salvos.</span>
+            </div>
+        </section>
+
+        <!-- 6. STASHING & CLEANING -->
+        <section>
+            <h2>6. Armazenamento & Limpeza</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Stash (Guardar Temporário)</span>
+                <code>git stash
+git stash pop       # Recuperar e apagar
+git stash list      # Ver pilha</code>
+                <span class="note">Útil para troca rápida de contexto.</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Clean (Limpar Lixo)</span>
+                <code>git clean -n -d     # Simular (Dry Run)
+git clean -f -d     # Apagar (Forçar)</code>
+                <span class="note">Remove arquivos não rastreados (builds, logs).</span>
+            </div>
+        </section>
+
+        <!-- 7. HISTÓRICO & INSPEÇÃO -->
+        <section>
+            <h2>7. Histórico & Inspeção</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Log Visual</span>
+                <code>git log --oneline --graph --decorate --all</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Blame (Quem alterou?)</span>
+                <code>git blame &lt;arquivo&gt;</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Busca no Código (Grep)</span>
+                <code>git grep -n "termo"</code>
+            </div>
+        </section>
+
+        <!-- 13. CONVENTIONAL COMMITS -->
+        <section>
+            <h2>13. Conventional Commits</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Estrutura Padrão</span>
+                <code>&lt;tipo&gt;(&lt;escopo opcional&gt;): &lt;descrição&gt;</code>
+            </div>
+            
+            <div style="margin-top:5px; font-size:7.5pt;">
+                <div style="margin-bottom:3px;">
+                    <span class="cc-type cc-feat">feat</span>
+                    <strong>Nova Funcionalidade</strong> (gera v0.X.0)
+                    <code>git commit -m "feat(auth): add google login"</code>
+                </div>
+                <div style="margin-bottom:3px;">
+                    <span class="cc-type cc-fix">fix</span>
+                    <strong>Correção de Bug</strong> (gera v0.0.X)
+                    <code>git commit -m "fix(api): handle timeout error"</code>
+                </div>
+                <div style="margin-bottom:3px;">
+                    <span class="cc-type cc-chore">chore</span>
+                    <strong>Tarefas / Manutenção</strong> (sem release)
+                    <code>git commit -m "chore: update dependencies"</code>
+                </div>
+                <div style="margin-bottom:3px;">
+                    <span class="cc-type cc-break">!</span>
+                    <strong>BREAKING CHANGE</strong> (gera vX.0.0)
+                    <code>git commit -m "feat(api)!: drop v1 endpoints"</code>
+                </div>
+            </div>
+            
+            <div class="cmd-block" style="margin-top:5px;">
+                <span class="cmd-desc">Outros Tipos</span>
+                <span class="note" style="margin-top:0;">
+                    <b>docs:</b> Documentação • <b>style:</b> Formatação<br>
+                    <b>refactor:</b> Refatoração • <b>test:</b> Testes<br>
+                    <b>perf:</b> Performance • <b>ci:</b> Pipeline
+                </span>
+            </div>
+        </section>
+
+        <!-- 8. TAGS & RELEASES -->
+        <section>
+            <h2>8. Tags (Versões)</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Criar Tag Anotada</span>
+                <code>git tag -a v1.0 -m "Release 1.0"</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Enviar Tags</span>
+                <code>git push origin v1.0
+git push origin --tags # Todas</code>
+            </div>
+        </section>
+
+        <!-- 9. REESCREVER HISTÓRICO -->
+        <section>
+            <h2>9. Reescrever (Avançado)</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Rebase (Linearizar)</span>
+                <code>git checkout feature
+git rebase main</code>
+                <span class="note">Aplica commits da feature no topo da main.</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Cherry-Pick (Pinçar)</span>
+                <code>git cherry-pick &lt;hash-commit&gt;</code>
+                <span class="note">Copia um commit específico para a branch atual.</span>
+            </div>
+        </section>
+
+        <!-- 10. DEBUGGING & RECOVERY -->
+        <section>
+            <h2>10. Debug & Recuperação</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Reflog (Salva-Vidas)</span>
+                <code>git reflog
+git reset --hard HEAD@{1}</code>
+                <span class="note">Recupera commits perdidos/resetados.</span>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Bisect (Caça-Bugs Binária)</span>
+                <code>git bisect start
+git bisect bad      # Atual (bugado)
+git bisect good v1.0</code>
+                <span class="note">O Git isola qual commit quebrou o código.</span>
+            </div>
+        </section>
+
+        <!-- 11. GITHUB & FORKS -->
+        <section>
+            <h2>11. GitHub & Forks</h2>
+            <div class="cmd-block">
+                <span class="cmd-desc">Sincronizar Fork</span>
+                <code>git remote add upstream &lt;url-original&gt;
+git fetch upstream
+git merge upstream/master</code>
+            </div>
+            <div class="cmd-block">
+                <span class="cmd-desc">Verificar Refs</span>
+                <code>git ls-remote origin</code>
+            </div>
+        </section>
+
+        <!-- 12. PRODUTIVIDADE (ALIASES) -->
+        <section>
+            <h2>12. Aliases Úteis</h2>
+            <div class="cmd-block">
+                <code>git config --global alias.st status
+git config --global alias.co checkout
+git config --global alias.ci commit
+git config --global alias.br branch</code>
+                <span class="note">Use: <code>git st</code>, <code>git co</code>, etc.</span>
+            </div>
+        </section>
+
+        <!-- ARQUIVOS IGNORADOS -->
+        <section style="background-color: #fcfcfc; border: 1px dashed var(--border-color);">
+            <span class="cmd-desc" style="text-align:center;">.gitignore (Exemplo)</span>
+            <code style="background:none; border:none; color:#586069;">node_modules/
+*.log
+.env
+dist/</code>
+        </section>
+
+    </div>
+
+</body>
+</html>
